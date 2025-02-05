@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My S3 + EB Test Site</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
+    label { display: block; margin-top: 1em; }
+    input[type="text"], input[type="password"] { width: 100%; padding: 0.5em; }
+    button { margin-top: 1em; padding: 0.5em 1em; }
+    .response { margin-top: 1em; color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>S3 Frontend + Elastic Beanstalk Backend</h1>
+  <p>Below is a simple login form that will call our EB API endpoint for user login.</p>
+
+  <form id="loginForm">
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text" required />
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required />
+
+    <button type="submit">Log In</button>
+  </form>
+
+  <div id="result" class="response"></div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const resultDiv = document.getElementById('result');
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      // Retrieve input values
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        // Replace with your actual EB endpoint (HTTPS if possible)
+        const apiUrl = 'https://s0gs1bqeol.execute-api.us-east-1.amazonaws.com/auth/login';
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (!response.ok) {
+          // If there's an HTTP error (e.g., 401)
+          const error = await response.json();
+          resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+          return;
+        }
+
+        // If success, redirect to success page
+        // (Alternatively, you could parse the data to store token, etc.)
+        window.location.href = 'mainpage.html';
+      } catch (err) {
+        resultDiv.innerHTML = `<span class="error">Request failed: ${err.message}</span>`;
+      }
+    });
+  </script>
+</body>
+</html>

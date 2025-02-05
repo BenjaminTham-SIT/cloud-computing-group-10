@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>View Thread</title>
+</head>
+<body>
+  <h1 id="threadTitle"></h1>
+  <div id="threadBody"></div>
+  <div id="comments"></div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const threadId = params.get('id');
+
+    async function fetchThread() {
+      try {
+        const response = await fetch(`https://s0gs1bqeol.execute-api.us-east-1.amazonaws.com/threads/${threadId}`);
+        if (!response.ok) throw new Error('Failed to fetch thread');
+        const data = await response.json();
+
+        document.getElementById('threadTitle').innerText = data.title;
+        document.getElementById('threadBody').innerHTML = `
+          <p>${data.body}</p>
+          <small>By ${data.authorName} on ${data.created_at}</small>
+        `;
+
+        let commentsHTML = '<h3>Comments</h3>';
+        data.comments.forEach(c => {
+          commentsHTML += `
+            <div style="border:1px solid #ccc; margin:1em; padding:1em;">
+              <p>${c.body}</p>
+              <small>By ${c.commenterName} on ${c.created_at}</small>
+            </div>
+          `;
+        });
+        document.getElementById('comments').innerHTML = commentsHTML;
+
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.onload = fetchThread;
+  </script>
+</body>
+</html>

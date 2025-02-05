@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Forum Threads</title>
+</head>
+<body>
+  <h1>All Threads</h1>
+  <div id="threads"></div>
+
+  <script>
+    async function fetchThreads() {
+      try {
+        const response = await fetch('https://s0gs1bqeol.execute-api.us-east-1.amazonaws.com/threads');
+        if (!response.ok) throw new Error('Failed to fetch threads');
+        const data = await response.json();
+
+        const threadsDiv = document.getElementById('threads');
+        threadsDiv.innerHTML = data.map(thread => `
+          <div style="border:1px solid #ccc; margin:1em; padding:1em;">
+            <h3>${thread.title}</h3>
+            <p>${thread.body}</p>
+            <small>By ${thread.authorName} on ${thread.created_at}</small><br/>
+            <a href="thread.html?id=${thread.id}">View Thread</a>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.onload = fetchThreads;
+  </script>
+</body>
+</html>
