@@ -1,8 +1,6 @@
 import mysql from 'mysql2/promise';
 
 export const handler = async (event) => {
-  console.log("Event received:", event);  // Log the full event for debugging
-
   const dbConfig = {
     host: 'forum-database-1.ci6qmqse2nc9.us-east-1.rds.amazonaws.com', // Replace with your RDS endpoint
     user: 'admin',
@@ -15,29 +13,37 @@ export const handler = async (event) => {
   try {
     connection = await mysql.createConnection(dbConfig);
 
-    // Extract parameters from the query string (URL query parameters)
-    const { user_id, topic_id, name, content } = event.queryStringParameters || {};
+    // Ensure event.body is parsed correctly
+    let body;
+    if (event.body) {
+      try {
+        body = JSON.parse(event.body);
+      } catch (error) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: 'Invalid JSON format' }),
+        };
+      }
+    }
 
-    console.log("Received user_id:", user_id);
-    console.log("Received topic_id:", topic_id);
-    console.log("Received name:", name);
-    console.log("Received content:", content);
+    // Validate required fields in the body
+    const { user_id, topic_id, name, content } = body;
 
-    // Validate required fields
     if (!user_id || !topic_id || !name || !content) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields', received: event.queryStringParameters }),
+        body: JSON.stringify({ error: 'Missing required fields' }),
       };
     }
 
-    // Define the query to insert the data into the database
+    // Define the query to insert a new post
     const query = 'INSERT INTO posts (user_id, topic_id, name, content, created_at) VALUES (?, ?, ?, ?, NOW())';
     const values = [user_id, topic_id, name, content];
 
-    // Execute the query
+    // Execute the insert query
     const [result] = await connection.execute(query, values);
 
+    // Return the response with the ID of the inserted post
     return {
       statusCode: 201,
       body: JSON.stringify({ message: 'Post created successfully', postId: result.insertId }),
