@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 
 export const handler = async (event) => {
   const dbConfig = {
-    host: 'forum-database-1.ci6qmqse2nc9.us-east-1.rds.amazonaws.com', // Replace with your RDS endpoint
+    host: 'forum-database.ci6qmqse2nc9.us-east-1.rds.amazonaws.com', // Replace with your RDS endpoint
     user: 'admin',
     password: 'testtest',
     database: 'forum-database',
