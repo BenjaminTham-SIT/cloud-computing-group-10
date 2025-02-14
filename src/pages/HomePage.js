@@ -7,7 +7,6 @@ const API_BASE_URL = 'https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev
 
 function HomePage() {
   const [forums, setForums] = useState([]);
-  const [newTopic, setNewTopic] = useState('');
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/getTopics`)
@@ -16,49 +15,11 @@ function HomePage() {
       .catch(err => console.error('Error fetching forums:', err));
   }, []);
 
-  // Handle the form submission for adding a new forum topic
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    // Construct the payload for your POST request
-    const payload = {
-      title: newTopic
-      // Include additional fields if needed by your API
-    };
-
-    fetch(`${API_BASE_URL}/createTopic`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-      .then(res => res.json())
-      .then(data => {
-        // Option 1: If your API returns the newly created topic, add it to the existing list
-        setForums([...forums, data]);
-        // Option 2: Alternatively, refetch the topics if the API doesn't return the new topic directly
-        setNewTopic('');
-      })
-      .catch(err => console.error('Error adding forum topic:', err));
-  };
-
   return (
     <div>
-      <NavBar />
+              <NavBar />
+
       <h1>Forums</h1>
-      {/* Form to add a new forum topic */}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={newTopic}
-          onChange={(e) => setNewTopic(e.target.value)}
-          placeholder="Enter new forum topic"
-          required
-        />
-        <button type="submit">Add Topic</button>
-      </form>
-      {/* List of forum topics */}
       <ul>
         {forums.map(forum => (
           <li key={forum.id}>
