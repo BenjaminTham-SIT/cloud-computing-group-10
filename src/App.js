@@ -10,14 +10,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   const auth = useAuth();
 
-  // Configure sign-out redirect (replace placeholders with your actual values)
-  const signOutRedirect = () => {
-    const clientId = "3c2ncrmuc1qiakldgkldndfg5n";
-    const logoutUri = "https://yourdomain.com/logout"; // Replace with your logout URI
-    const cognitoDomain = "https://us-east-1dad3lruxx.auth.us-east-1.amazoncognito.com/"; // Replace with your user pool domain
-    window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
-  };
-
   if (auth.isLoading) {
     return <div>Loading...</div>;
   }
@@ -33,13 +25,11 @@ function App() {
           <div>
             <span>Hello, {auth.user?.profile.email}</span>
             {' '}
-            <button onClick={() => auth.removeUser()}>Local Sign out</button>
-            {' '}
-            <button onClick={signOutRedirect}>Global Sign out</button>
+            <button onClick={() => auth.signoutRedirect()}>Sign Out</button>
           </div>
         ) : (
           <div>
-            <button onClick={() => auth.signinRedirect()}>Sign in</button>
+            <button onClick={() => auth.signinRedirect()}>Sign In</button>
           </div>
         )}
       </header>

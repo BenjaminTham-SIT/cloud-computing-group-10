@@ -9,7 +9,7 @@ function HomePage() {
   const [forums, setForums] = useState([]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/getTopics`)
+    post(`${API_BASE_URL}/getTopics`)
       .then(res => res.json())
       .then(data => setForums(data))
       .catch(err => console.error('Error fetching forums:', err));
