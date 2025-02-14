@@ -40,7 +40,7 @@ function ForumPage() {
         // Option 1: If your API returns the newly created topic, add it to the existing list
         setPosts([...posts, data]);
         // Option 2: Alternatively, refetch the topics if the API doesn't return the new topic directly
-        setNewPosts('');
+        setNewPost('');
       })
       .catch(err => console.error('Error adding post topic:', err));
   };
