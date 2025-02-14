@@ -23,7 +23,7 @@ function App() {
       <header style={{ padding: '10px', borderBottom: '1px solid #ccc', marginBottom: '20px' }}>
         {auth.isAuthenticated ? (
           <div>
-            <span>Hello, {auth.user?.profile.email}</span>
+            <span>Hello User, {auth.user?.profile.email}</span>
             {' '}
             <button onClick={() => auth.signoutRedirect()}>Sign Out</button>
           </div>
