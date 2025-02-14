@@ -9,12 +9,30 @@ function HomePage() {
   const [forums, setForums] = useState([]);
   const [newTopic, setNewTopic] = useState('');
 
+  // useEffect(() => {
+  //   fetch(`${API_BASE_URL}/getTopics`)
+  //     .then(res => res.json())
+  //     .then(data => setForums(data))
+  //     .catch(err => console.error('Error fetching forums:', err));
+  // }, []);
+
   useEffect(() => {
     fetch(`${API_BASE_URL}/getTopics`)
       .then(res => res.json())
-      .then(data => setForums(data))
+      .then(data => {
+        console.log("Fetched data:", data);
+        // Adjust based on the structure of the returned data:
+        if (Array.isArray(data)) {
+          setForums(data);
+        } else if (data.topics && Array.isArray(data.topics)) {
+          setForums(data.topics);
+        } else {
+          console.error("Unexpected data format", data);
+        }
+      })
       .catch(err => console.error('Error fetching forums:', err));
   }, []);
+  
 
   // Handle the form submission for adding a new forum topic
   const handleSubmit = (event) => {
