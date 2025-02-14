@@ -19,6 +19,7 @@ const cognitoAuthConfig = {
 };
 
 const handleLogout = () => {
+  const auth = useAuth();
   auth.removeUser();
   auth.signoutRedirect();
 };
