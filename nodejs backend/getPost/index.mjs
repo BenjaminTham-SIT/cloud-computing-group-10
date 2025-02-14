@@ -21,8 +21,8 @@ export const handler = async (event) => {
       const body = JSON.parse(event.body);
       
       if (body.post_id) {
-        query += ' WHERE post_id = ?'; // Assuming "id" is the column name for the topic ID
-        values.push(body.post_id);
+        query += ' WHERE topic_id = ?'; 
+        values.push(body.topic_id);
       }
     }
 
