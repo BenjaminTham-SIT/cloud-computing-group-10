@@ -13,15 +13,28 @@ function HomePage() {
       .then(res => res.json())
       .then(data => {
         console.log("Fetched data:", data);
-        // Check if data.data exists and is an array
-        if (data.data && Array.isArray(data.data)) {
-          setForums(data.data);
+        let topics;
+        if (data.body) {
+          try {
+            const parsedBody = JSON.parse(data.body);
+            if (parsedBody.data && Array.isArray(parsedBody.data)) {
+              topics = parsedBody.data;
+            } else {
+              console.error("Parsed body does not contain an array in 'data'", parsedBody);
+            }
+          } catch (err) {
+            console.error("Error parsing body as JSON", err);
+          }
+        }
+        if (topics) {
+          setForums(topics);
         } else {
           console.error("Unexpected data format", data);
         }
       })
       .catch(err => console.error('Error fetching forums:', err));
   }, []);
+  
 
   // Handle the form submission for adding a new forum topic
   const handleSubmit = (event) => {
