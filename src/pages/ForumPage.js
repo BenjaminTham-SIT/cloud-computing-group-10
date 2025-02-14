@@ -38,9 +38,9 @@ function ForumPage() {
       .then(res => res.json())
       .then(data => {
         // Option 1: If your API returns the newly created topic, add it to the existing list
-        setForums([...posts, data]);
+        setPosts([...posts, data]);
         // Option 2: Alternatively, refetch the topics if the API doesn't return the new topic directly
-        setNewTopic('');
+        setNewPosts('');
       })
       .catch(err => console.error('Error adding post topic:', err));
   };
