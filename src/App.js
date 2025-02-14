@@ -25,7 +25,10 @@ function App() {
           <div>
             <span>Hello User, {auth.user?.profile.email}</span>
             {' '}
-            <button onClick={() => auth.signoutRedirect()}>Sign Out</button>
+            <button onClick={() => auth.signoutRedirect({ extraQueryParams: { client_id: cognitoAuthConfig.clientId } })}>
+  Sign Out
+</button>
+
           </div>
         ) : (
           <div>
