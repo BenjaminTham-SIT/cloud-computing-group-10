@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import NavBar from './components/NavBar';
+
 
 const API_BASE_URL = 'https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics';
 
@@ -16,6 +18,8 @@ function ForumPage() {
 
   return (
     <div>
+              <NavBar />
+
       <h1>Forum: {forumId}</h1>
       <ul>
         {posts.map(post => (
