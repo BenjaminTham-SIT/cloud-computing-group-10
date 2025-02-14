@@ -5,11 +5,12 @@ import { useAuth } from 'react-oidc-context';
 import HomePage from './pages/HomePage';
 import ForumPage from './pages/ForumPage';
 import PostPage from './pages/PostPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const auth = useAuth();
 
-  // Configure sign-out redirect (replace with your actual values)
+  // Configure sign-out redirect (replace placeholders with your actual values)
   const signOutRedirect = () => {
     const clientId = "3c2ncrmuc1qiakldgkldndfg5n";
     const logoutUri = "https://yourdomain.com/logout"; // Replace with your logout URI
@@ -44,9 +45,21 @@ function App() {
       </header>
       <Router>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/forum/:forumId" element={<ForumPage />} />
-          <Route path="/post/:postId" element={<PostPage />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }/>
+          <Route path="/forum/:forumId" element={
+            <ProtectedRoute>
+              <ForumPage />
+            </ProtectedRoute>
+          }/>
+          <Route path="/post/:postId" element={
+            <ProtectedRoute>
+              <PostPage />
+            </ProtectedRoute>
+          }/>
         </Routes>
       </Router>
     </div>
