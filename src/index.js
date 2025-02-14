@@ -10,6 +10,7 @@ const cognitoAuthConfig = {
   redirect_uri: "https://main.d1qhf3toawkd0w.amplifyapp.com/",
   response_type: "code",
   scope: "phone openid email",
+  post_logout_redirect_uri: "https://main.d1qhf3toawkd0w.amplifyapp.com/", // add this line
 };
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
