@@ -16,11 +16,49 @@ function ForumPage() {
       .catch(err => console.error('Error fetching posts:', err));
   }, [forumId]);
 
+  // Handle the form submission for adding a new post topic
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    // Construct the payload for your POST request
+    const payload = {
+      title: newPost
+      // Include additional fields if needed by your API
+    };
+
+    fetch(`${API_BASE_URL}/createPost`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(data => {
+        // Option 1: If your API returns the newly created topic, add it to the existing list
+        setForums([...forums, data]);
+        // Option 2: Alternatively, refetch the topics if the API doesn't return the new topic directly
+        setNewTopic('');
+      })
+      .catch(err => console.error('Error adding post topic:', err));
+  };
+
   return (
     <div>
-              <NavBar />
-
-      <h1>Forum: {forumId}</h1>
+      <NavBar />
+      <h1>Posts</h1>
+      {/* Form to add a new post topic */}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={newTopic}
+          onChange={(e) => setNewTopic(e.target.value)}
+          placeholder="Enter new post topic"
+          required
+        />
+        <button type="submit">Add Topic</button>
+      </form>
+      {/* List of forum topics */}
       <ul>
         {posts.map(post => (
           <li key={post.id}>

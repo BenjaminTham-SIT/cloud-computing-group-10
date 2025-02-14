@@ -26,7 +26,7 @@ function HomePage() {
       // Include additional fields if needed by your API
     };
 
-    fetch(`${API_BASE_URL}/createTopic`, {
+    fetch(`${API_BASE_URL}/newTopic`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
