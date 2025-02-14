@@ -7,6 +7,15 @@ import ForumPage from './pages/ForumPage';
 import PostPage from './pages/PostPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
+const cognitoAuthConfig = {
+  authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_dAD3lRUXx",
+  clientId: "3c2ncrmuc1qiakldgkldndfg5n", // changed from client_id to clientId
+  redirectUri: "https://main.d1qhf3toawkd0w.amplifyapp.com/", // changed from redirect_uri
+  responseType: "code", // changed from response_type
+  scope: "phone openid email",
+  postLogoutRedirectUri: "https://main.d1qhf3toawkd0w.amplifyapp.com/", // changed from post_logout_redirect_uri
+};
+
 function App() {
   const auth = useAuth();
 
@@ -25,7 +34,10 @@ function App() {
           <div>
             <span>Hello User, {auth.user?.profile.email}</span>
             {' '}
-            <button onClick={() => auth.signoutRedirect()}>Sign Out</button>
+            <button onClick={() => auth.signoutRedirect({ extraQueryParams: { client_id: cognitoAuthConfig.clientId } })}>
+  Sign Out
+</button>
+
           </div>
         ) : (
           <div>
