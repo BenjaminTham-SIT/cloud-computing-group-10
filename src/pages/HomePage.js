@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import NavBar from './components/NavBar';
+import NavBar from '../components/NavBar';
 
 
 const API_BASE_URL = 'https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev'; // update this
