@@ -2,37 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 
-
 const API_BASE_URL = 'https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev'; // update this
 
 function HomePage() {
   const [forums, setForums] = useState([]);
   const [newTopic, setNewTopic] = useState('');
 
-  // useEffect(() => {
-  //   fetch(`${API_BASE_URL}/getTopics`)
-  //     .then(res => res.json())
-  //     .then(data => setForums(data))
-  //     .catch(err => console.error('Error fetching forums:', err));
-  // }, []);
-
   useEffect(() => {
     fetch(`${API_BASE_URL}/getTopics`)
       .then(res => res.json())
       .then(data => {
         console.log("Fetched data:", data);
-        // Adjust based on the structure of the returned data:
-        if (Array.isArray(data)) {
-          setForums(data);
-        } else if (data.topics && Array.isArray(data.topics)) {
-          setForums(data.topics);
+        // Check if data.data exists and is an array
+        if (data.data && Array.isArray(data.data)) {
+          setForums(data.data);
         } else {
           console.error("Unexpected data format", data);
         }
       })
       .catch(err => console.error('Error fetching forums:', err));
   }, []);
-  
 
   // Handle the form submission for adding a new forum topic
   const handleSubmit = (event) => {
@@ -53,9 +42,8 @@ function HomePage() {
     })
       .then(res => res.json())
       .then(data => {
-        // Option 1: If your API returns the newly created topic, add it to the existing list
+        // Assuming the API returns the newly created topic in the same format
         setForums([...forums, data]);
-        // Option 2: Alternatively, refetch the topics if the API doesn't return the new topic directly
         setNewTopic('');
       })
       .catch(err => console.error('Error adding forum topic:', err));
@@ -79,8 +67,8 @@ function HomePage() {
       {/* List of forum topics */}
       <ul>
         {forums.map(forum => (
-          <li key={forum.id}>
-            <Link to={`/forum/${forum.id}`}>{forum.title}</Link>
+          <li key={forum.topic_id}>
+            <Link to={`/forum/${forum.topic_id}`}>{forum.name}</Link>
           </li>
         ))}
       </ul>
