@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ForumPage from './pages/ForumPage';
 import PostPage from './pages/PostPage';
+import { withAuthenticator } from 'aws-amplify-react'
+
 
 function App() {
   return (
@@ -16,4 +18,4 @@ function App() {
   );
 }
 
-export default App;
+export default withAuthenticator(App, { includeGreetings: true })

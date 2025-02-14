@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-const API_BASE_URL = 'https://your-api-gateway-endpoint'; // update this
+const API_BASE_URL = 'https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics'; // update this
 
 function HomePage() {
   const [forums, setForums] = useState([]);
