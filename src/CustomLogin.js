@@ -181,11 +181,7 @@ function CustomLogin() {
 
   return view === "login" ? (
     <div className="card">
-<<<<<<< HEAD
-      <h1>Login - staging 10</h1>
-=======
-      <h1>Login - staging 5</h1>
->>>>>>> parent of 001d682 (UPDATE 39)
+      <h1>Login - staging 11</h1>
       {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
       <input
         placeholder="Enter email"
