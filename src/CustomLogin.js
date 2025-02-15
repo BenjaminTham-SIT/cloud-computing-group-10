@@ -1,3 +1,4 @@
+// src/CustomLogin.js
 import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
@@ -40,9 +41,7 @@ function CustomLogin() {
         setSession(response.Session);
         setView("otp");
       } else if (response.AuthenticationResult) {
-        // login(response.AuthenticationResult.IdToken);
-        login(response.AuthenticationResult.AccessToken, response.AuthenticationResult.RefreshToken);
-
+        login(response.AuthenticationResult.AccessToken);
         navigate("/"); // redirect to homepage
       } else if (response["$metadata"]?.httpStatusCode === 200) {
         // This branch rarely occurs, but you can handle it if needed.
@@ -85,7 +84,7 @@ function CustomLogin() {
 
   return view === "login" ? (
     <div className="card">
-      <h1>Login</h1>
+      <h1>Login - staging 2</h1>
       {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
       <input
         placeholder="Enter email"

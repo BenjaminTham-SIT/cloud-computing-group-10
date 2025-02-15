@@ -8,7 +8,6 @@ import ForumPage from "./pages/ForumPage";
 import PostPage from "./pages/PostPage";
 import CustomRegister from "./CustomRegister";
 
-
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useContext(AuthContext);
   return isAuthenticated ? children : <Navigate to="/login" />;
