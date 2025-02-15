@@ -1,3 +1,6 @@
+//====================================================== CHECKPOINT 1 ======================================================================================================
+
+
 // // src/App.js
 // import React , {useEffect } from 'react';
 // import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
@@ -89,70 +92,136 @@
 // export default App;
 
 
-import { useState } from 'react'
-import { CognitoIdentityProviderClient, InitiateAuthCommand, RespondToAuthChallengeCommand } from "@aws-sdk/client-cognito-identity-provider";
-import './App.css'
-const config = { region: "us-east-1" }
+//====================================================== CHECKPOINT 2 ======================================================================================================
 
-const cognitoClient = new CognitoIdentityProviderClient(config);
-const clientId = "3c2ncrmuc1qiakldgkldndfg5n"
 
-function App() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [view, setView] = useState("login");
-  const [session, setSession] = useState("");
+// import { useState } from 'react'
+// import { CognitoIdentityProviderClient, InitiateAuthCommand, RespondToAuthChallengeCommand } from "@aws-sdk/client-cognito-identity-provider";
+// import './App.css'
 
-  const handleLogin = async () => {
-    const input = {
-      "AuthFlow": "USER_PASSWORD_AUTH",
-      "AuthParameters": {
-        "USERNAME": email,
-        "PASSWORD": password,
-      },
-      "ClientId": clientId,
-    };
-    const command = new InitiateAuthCommand(input);
-    const response = await cognitoClient.send(command);
+// const config = { region: "us-east-1" }
 
-    console.log(response)
-    if (response.ChallengeName === "NEW_PASSWORD_REQUIRED") {
-      setSession(response.Session)
-      setView('otp')
-    }
-    else if (response['$metadata']['httpStatusCode'] === 200) alert("Login Successfull!")
-  }
+// const cognitoClient = new CognitoIdentityProviderClient(config);
+// const clientId = "3c2ncrmuc1qiakldgkldndfg5n"
 
-  const handleChallenge = async () => {
-    const input = { // RespondToAuthChallengeRequest
-      ClientId: clientId, // required
-      ChallengeName: "NEW_PASSWORD_REQUIRED",
-      Session: session,
-      ChallengeResponses: {
-        "NEW_PASSWORD": password, "USERNAME": email
-      },
-    };
-    const command = new RespondToAuthChallengeCommand(input);
-    const response = await cognitoClient.send(command);
-    console.log(response)
-    if (response['$metadata']['httpStatusCode'] === 200) { alert("Password Changed Successfully!"); setView('login') }
-  }
+// function App() {
+//   const [email, setEmail] = useState("");
+//   const [password, setPassword] = useState("");
+//   const [view, setView] = useState("login");
+//   const [session, setSession] = useState("");
 
-  return (view === "login" ?
-    <div className='card'>
-      <input placeholder='Enter email' value={email} onChange={e => setEmail(e.target.value)} />
-      <input placeholder='Enter password' value={password} onChange={e => setPassword(e.target.value)} />
-      <br />
-      <button onClick={handleLogin}>Login</button>
-    </div>
-    :
-    <div className='card'>
-      <input placeholder='Enter new password' value={password} onChange={e => setPassword(e.target.value)} />
-      <br />
-      <button onClick={handleChallenge}>Save New Password</button>
+//   const handleLogin = async () => {
+//     const input = {
+//       "AuthFlow": "USER_PASSWORD_AUTH",
+//       "AuthParameters": {
+//         "USERNAME": email,
+//         "PASSWORD": password,
+//       },
+//       "ClientId": clientId,
+//     };
+//     const command = new InitiateAuthCommand(input);
+//     const response = await cognitoClient.send(command);
 
-    </div>
-  )
+//     console.log(response)
+//     if (response.ChallengeName === "NEW_PASSWORD_REQUIRED") {
+//       setSession(response.Session)
+//       setView('otp')
+//     }
+//     else if (response['$metadata']['httpStatusCode'] === 200) alert("Login Successfull!")
+//   }
+
+//   const handleChallenge = async () => {
+//     const input = { // RespondToAuthChallengeRequest
+//       ClientId: clientId, // required
+//       ChallengeName: "NEW_PASSWORD_REQUIRED",
+//       Session: session,
+//       ChallengeResponses: {
+//         "NEW_PASSWORD": password, "USERNAME": email
+//       },
+//     };
+//     const command = new RespondToAuthChallengeCommand(input);
+//     const response = await cognitoClient.send(command);
+//     console.log(response)
+//     if (response['$metadata']['httpStatusCode'] === 200) { alert("Password Changed Successfully!"); setView('login') }
+//   }
+
+//   return (view === "login" ?
+//     <div className='card'>
+//       <input placeholder='Enter email' value={email} onChange={e => setEmail(e.target.value)} />
+//       <input placeholder='Enter password' value={password} onChange={e => setPassword(e.target.value)} />
+//       <br />
+//       <button onClick={handleLogin}>Login</button>
+//     </div>
+//     :
+//     <div className='card'>
+//       <input placeholder='Enter new password' value={password} onChange={e => setPassword(e.target.value)} />
+//       <br />
+//       <button onClick={handleChallenge}>Save New Password</button>
+
+//     </div>
+//   )
+// }
+
+// export default App
+
+
+//====================================================== CHECKPOINT 3 ======================================================================================================
+
+
+// src/App.js
+import React, { useContext } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthContext, AuthProvider } from "./AuthContext";
+import CustomLogin from "./CustomLogin";
+import HomePage from "./pages/HomePage";
+import ForumPage from "./pages/ForumPage";
+import PostPage from "./pages/PostPage";
+
+function ProtectedRoute({ children }) {
+  const { isAuthenticated } = useContext(AuthContext);
+  return isAuthenticated ? children : <Navigate to="/login" />;
 }
 
-export default App
+function AppRoutes() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<CustomLogin />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/forum/:forumId"
+          element={
+            <ProtectedRoute>
+              <ForumPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/post/:postId"
+          element={
+            <ProtectedRoute>
+              <PostPage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Router>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  );
+}
+
+export default App;
