@@ -18,14 +18,14 @@ const cognitoAuthConfig = {
   post_logout_redirect_uri: "https://main.d1qhf3toawkd0w.amplifyapp.com/", // add this line
 };
 
-const handleLogout = () => {
-  const auth = useAuth();
-  auth.removeUser();
-  auth.signoutRedirect();
-};
-
 function App() {
   const auth = useAuth();
+
+  useEffect(() => {
+    if (auth.isAuthenticated && auth.user) {
+      console.log("Access Token:", auth.user.access_token);
+    }
+  }, [auth.isAuthenticated, auth.user]);
 
   if (auth.isLoading) {
     return <div>Loading...</div>;
@@ -42,7 +42,6 @@ function App() {
           <div>
             <span>Hello User, {auth.user?.profile.email}</span>
             {' '}
-            <button onClick={handleLogout}>Sign Out</button>
             <button onClick={() => auth.signoutRedirect()}>Sign Out 2</button>
           </div>
         ) : (
