@@ -40,7 +40,9 @@ function CustomLogin() {
         setSession(response.Session);
         setView("otp");
       } else if (response.AuthenticationResult) {
-        login(response.AuthenticationResult.IdToken);
+        // login(response.AuthenticationResult.IdToken);
+        login(response.AuthenticationResult.AccessToken, response.AuthenticationResult.RefreshToken);
+
         navigate("/"); // redirect to homepage
       } else if (response["$metadata"]?.httpStatusCode === 200) {
         // This branch rarely occurs, but you can handle it if needed.
