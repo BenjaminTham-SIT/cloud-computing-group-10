@@ -6,8 +6,7 @@ import HomePage from './pages/HomePage';
 import ForumPage from './pages/ForumPage';
 import PostPage from './pages/PostPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import { Auth } from 'aws-amplify';
-
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 
 const cognitoAuthConfig = {
@@ -21,8 +20,8 @@ const cognitoAuthConfig = {
 
 async function getIdToken() {
   try {
-    const session = await Auth.currentSession();
-    const idToken = session.getIdToken().getJwtToken();  // ✅ Get the ID Token
+    const session = await fetchAuthSession(); // ✅ New way to fetch session in v5+
+    const idToken = session.tokens?.idToken?.toString();  // ✅ Get ID Token
     console.log('ID Token:', idToken);
     return idToken;
   } catch (error) {
@@ -37,7 +36,7 @@ function App() {
     if (auth.isAuthenticated && auth.user) {
       // console.log("Access Token:", auth.user.access_token);
       // console.log("User:", auth.user);
-      console.log("ID token:", auth.user.idToken);
+      getIdToken();
     }
   }, [auth.isAuthenticated, auth.user]);
 
