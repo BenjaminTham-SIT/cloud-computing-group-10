@@ -6,7 +6,7 @@ import HomePage from './pages/HomePage';
 import ForumPage from './pages/ForumPage';
 import PostPage from './pages/PostPage';
 import ProtectedRoute from './components/ProtectedRoute';
-// import { Auth } from 'aws-amplify';
+import { Auth } from 'aws-amplify';
 
 
 
@@ -19,16 +19,16 @@ const cognitoAuthConfig = {
   post_logout_redirect_uri: "https://main.d1qhf3toawkd0w.amplifyapp.com/", // add this line
 };
 
-// async function getIdToken() {
-//   try {
-//     const session = await Auth.currentSession();
-//     const idToken = session.getIdToken().getJwtToken();  // ✅ Get the ID Token
-//     console.log('ID Token:', idToken);
-//     return idToken;
-//   } catch (error) {
-//     console.error('Error getting ID Token:', error);
-//   }
-// }
+async function getIdToken() {
+  try {
+    const session = await Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();  // ✅ Get the ID Token
+    console.log('ID Token:', idToken);
+    return idToken;
+  } catch (error) {
+    console.error('Error getting ID Token:', error);
+  }
+}
 
 function App() {
   const auth = useAuth();
