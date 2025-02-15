@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.749.0",
     "amazon-cognito-identity-js": "^6.3.12",
     "aws-amplify": "^6.13.0",
     "axios": "^1.7.9",
