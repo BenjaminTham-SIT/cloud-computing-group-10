@@ -240,42 +240,7 @@ function CustomRegister() {
       const command = new ConfirmSignUpCommand(input);
       const response = await cognitoClient.send(command);
       console.log(response);
-<<<<<<< HEAD
-      if (response["$metadata"]?.httpStatusCode === 200) {
-        setSuccessMsg("Email confirmed successfully! You can now log in.");
-        // Optionally fetch topics from your API for testing
-        fetch(`${API_BASE_URL}/getTopics`)
-          .then(res => res.json())
-          .then(data => {
-            console.log("Fetched topics:", data);
-            let topicsArray;
-            if (data.body) {
-              try {
-                const parsedBody = JSON.parse(data.body);
-                if (parsedBody.data && Array.isArray(parsedBody.data)) {
-                  topicsArray = parsedBody.data;
-                } else {
-                  console.error("Parsed body does not contain an array in 'data'", parsedBody);
-                }
-              } catch (err) {
-                console.error("Error parsing body as JSON", err);
-              }
-            }
-            if (topicsArray) {
-              setTopics(topicsArray);
-            } else {
-              console.error("Unexpected data format", data);
-            }
-          })
-          .catch(err => console.error("Error fetching topics:", err));
-        // Redirect to homepage after 3 seconds (adjust delay as needed)
-        setTimeout(() => {
-          navigate("/");
-        }, 3000);
-      }
-=======
       setSuccessMsg("Email confirmed successfully! You can now log in.");
->>>>>>> parent of 001d682 (UPDATE 39)
     } catch (error) {
       console.error(error);
       setErrorMsg("Confirmation failed: " + error.message);
