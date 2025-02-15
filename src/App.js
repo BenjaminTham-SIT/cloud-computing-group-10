@@ -176,6 +176,7 @@ import CustomLogin from "./CustomLogin";
 import HomePage from "./pages/HomePage";
 import ForumPage from "./pages/ForumPage";
 import PostPage from "./pages/PostPage";
+import CustomRegister from "./CustomRegister";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useContext(AuthContext);
@@ -211,6 +212,8 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="/register" element={<CustomRegister />} />
+
       </Routes>
     </Router>
   );
