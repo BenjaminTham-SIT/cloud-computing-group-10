@@ -181,7 +181,7 @@ function CustomLogin() {
 
   return view === "login" ? (
     <div className="card">
-      <h1>Login - staging 5</h1>
+      <h1>Login - staging 6</h1>
       {errorMsg && <p style={{ color: "red" }}>{errorMsg}</p>}
       <input
         placeholder="Enter email"
