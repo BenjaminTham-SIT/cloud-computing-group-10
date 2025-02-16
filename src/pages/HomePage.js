@@ -1,18 +1,35 @@
 // /pages/HomePage.js
 import React, { useState, useEffect } from "react";
+import { useAuth } from "react-oidc-context";
 import { Link } from "react-router-dom";
 
 const HomePage = () => {
+    
+    const auth = useAuth();
   const [topics, setTopics] = useState([]);
   const [newTopic, setNewTopic] = useState({ name: "", description: "" });
 
   // Fetch all topics on component mount
   useEffect(() => {
-    fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics")
-      .then((response) => response.json())
-      .then((data) => setTopics(data))
+    const token = auth.user?.access_token; // Get the access token if available
+    fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          console.error("Expected an array but got:", data);
+          return;
+        }
+        setTopics(data);
+      })
       .catch((error) => console.error("Error fetching topics:", error));
-  }, []);
+  }, [auth]);
 
   const handleInputChange = (e) => {
     setNewTopic({ ...newTopic, [e.target.name]: e.target.value });
