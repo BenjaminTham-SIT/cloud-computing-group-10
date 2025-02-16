@@ -1,0 +1,120 @@
+// /pages/PostPage.js
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+
+const PostPage = () => {
+  const { postId } = useParams();
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+
+  // Fetch comments for this post (using post_id as a query parameter)
+  useEffect(() => {
+    fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?post_id=${postId}`)
+      .then((response) => response.json())
+      .then((data) => setComments(data))
+      .catch((error) => console.error("Error fetching comments:", error));
+  }, [postId]);
+
+  const handleNewCommentChange = (e) => {
+    setNewComment(e.target.value);
+  };
+
+  const handleNewCommentSubmit = (e) => {
+    e.preventDefault();
+    const commentData = {
+      user_id: "currentUserId", // Replace with actual authenticated user id
+      post_id: postId,
+      content: newComment,
+    };
+
+    fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newComment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(commentData),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setComments([...comments, data]);
+        setNewComment("");
+      })
+      .catch((error) => console.error("Error creating comment:", error));
+  };
+
+  const handleCommentEdit = (commentId, currentContent) => {
+    const updatedContent = prompt("Edit your comment:", currentContent);
+    if (updatedContent) {
+      const payload = {
+        user_id: "currentUserId", // Replace with actual user id
+        comment_id: commentId,
+        content: updatedContent,
+      };
+
+      fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/updateComment", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((response) => response.json())
+        .then((updatedComment) => {
+          setComments(
+            comments.map((comment) =>
+              comment.id === commentId ? updatedComment : comment
+            )
+          );
+        })
+        .catch((error) => console.error("Error updating comment:", error));
+    }
+  };
+
+  const handleCommentDelete = (commentId) => {
+    const payload = {
+      user_id: "currentUserId", // Replace with actual user id
+      comment_id: commentId,
+    };
+
+    fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/deleteComment", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((response) => {
+        if (response.ok) {
+          setComments(comments.filter((c) => c.id !== commentId));
+        }
+      })
+      .catch((error) => console.error("Error deleting comment:", error));
+  };
+
+  return (
+    <div>
+      <h1>Post: {postId}</h1>
+      <h2>Comments</h2>
+      <ul>
+        {comments.map((comment) => (
+          <li key={comment.id}>
+            <p>{comment.content}</p>
+            <button onClick={() => handleCommentEdit(comment.id, comment.content)}>
+              Edit
+            </button>
+            <button onClick={() => handleCommentDelete(comment.id)}>
+              Delete
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <h2>Add a Comment</h2>
+      <form onSubmit={handleNewCommentSubmit}>
+        <textarea
+          value={newComment}
+          onChange={handleNewCommentChange}
+          placeholder="Your comment"
+          required
+        />
+        <button type="submit">Post Comment</button>
+      </form>
+    </div>
+  );
+};
+
+export default PostPage;
