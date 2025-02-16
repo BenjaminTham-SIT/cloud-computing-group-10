@@ -16,7 +16,7 @@ const HomePage = () => {
 
     const token = auth.user?.id_token; // Get the access token if available
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics", {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
+      headers: token ? { Authorization: `${token}` } : {}
     })
       .then((response) => {
         if (!response.ok) {
