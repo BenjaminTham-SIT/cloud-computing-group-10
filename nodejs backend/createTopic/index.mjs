@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 
 export const handler = async (event) => {
   const dbConfig = {
-    host: 'forum-database.ci6qmqse2nc9.us-east-1.rds.amazonaws.com', // Replace with your RDS endpoint
+    host: 'forum-database.ci6qmqse2nc9.us-east-1.rds.amazonaws.com', 
     user: 'admin',
     password: 'testtest',
     database: 'forum-database',
@@ -11,13 +11,25 @@ export const handler = async (event) => {
   let connection;
 
   try {
+    // Parse the JSON request body
+    const requestBody = JSON.parse(event.body || '{}');
+
+    // Extract name and description from request
+    const { name, description } = requestBody;
+
+    // Validate input
+    if (!name || !description) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing required fields: name and description' }),
+      };
+    }
+
     connection = await mysql.createConnection(dbConfig);
 
-    // TODO: Check if user is admin 
-
-    // Execute a query: Insert a new topic
+    // Insert a new topic
     const insertQuery = `INSERT INTO topics (name, description) VALUES (?, ?)`;
-    const values = ['cars', 'talk about cars here'];
+    const values = [name, description];
 
     const [result] = await connection.execute(insertQuery, values);
 

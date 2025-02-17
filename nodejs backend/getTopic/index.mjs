@@ -13,18 +13,23 @@ export const handler = async (event) => {
   try {
     connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute('SELECT * FROM topics');
-    // const databaseName = 'forumdb'; // Change this to your desired name
-    // await connection.execute(CREATE DATABASE IF NOT EXISTS ${databaseName});
-
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Connected!', data: rows}),
+      headers: {
+        'Access-Control-Allow-Origin': '*', // Allow all origins
+        'Access-Control-Allow-Methods': 'OPTIONS, GET, POST, PUT, DELETE',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+      body: JSON.stringify({ message: 'Connected!', data: rows }),
     };
   } catch (error) {
     console.error('Database connection error:', error);
     return {
       statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*', // Ensure CORS headers are included even in errors
+      },
       body: JSON.stringify({ error: 'Database connection failed' }),
     };
   } finally {
