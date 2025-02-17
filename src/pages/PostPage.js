@@ -29,7 +29,7 @@ const PostPage = () => {
   //     .catch((error) => console.error("Error fetching comments:", error));
   // }, [postId, token]);
   useEffect(() => {
-    fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?post_id=${postId}`, {
+    fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
       .then((response) => response.json())
