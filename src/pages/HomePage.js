@@ -70,13 +70,14 @@ const HomePage = () => {
     <div>
       <h1>Forum Topics</h1>
       <ul>
-        {topics.map((topic) => (
-          <li key={topic.id}>
-            {/* Assumes each topic has an 'id', 'name', and 'description' */}
-            <Link to={`/topic/${topic.id}`}>{topic.name}</Link>
-            <p>{topic.description}</p>
-          </li>
-        ))}
+      {topics.map((topic) => (
+  <li key={topic.topic_id}>
+    <Link to={`/topic/${topic.topic_id}`}>{topic.name}</Link>
+    <p>{topic.description}</p>
+  </li>
+))}
+
+
       </ul>
 
       <h2>Create a New Topic</h2>
