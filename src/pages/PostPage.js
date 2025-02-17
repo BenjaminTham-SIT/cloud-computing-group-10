@@ -20,14 +20,31 @@ const PostPage = () => {
   //     .catch((error) => console.error("Error fetching comments:", error));
   // }, [postId]);
 
+  // useEffect(() => {
+  //   fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?post_id=${postId}`, {
+  //     headers: token ? { Authorization: `Bearer ${token}` } : {}
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => setComments(data))
+  //     .catch((error) => console.error("Error fetching comments:", error));
+  // }, [postId, token]);
   useEffect(() => {
     fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?post_id=${postId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
       .then((response) => response.json())
-      .then((data) => setComments(data))
+      .then((data) => {
+        // If the API response wraps your data in a "body" property, parse it first.
+        const parsedData = data.body ? JSON.parse(data.body) : data;
+        if (!Array.isArray(parsedData.data)) {
+          console.error("Expected an array for comments, got:", parsedData.data);
+          return;
+        }
+        setComments(parsedData.data);
+      })
       .catch((error) => console.error("Error fetching comments:", error));
   }, [postId, token]);
+  
 
   const handleNewCommentChange = (e) => {
     setNewComment(e.target.value);
@@ -53,6 +70,21 @@ const PostPage = () => {
     //   })
     //   .catch((error) => console.error("Error creating comment:", error));
 
+    // fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newComment", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     ...(token && { Authorization: `Bearer ${token}` })
+    //   },
+    //   body: JSON.stringify(commentData),
+    // })
+    //   .then((response) => response.json())
+    //   .then((data) => {
+    //     setComments([...comments, data]);
+    //     setNewComment("");
+    //   })
+    //   .catch((error) => console.error("Error creating comment:", error));
+
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newComment", {
       method: "POST",
       headers: {
@@ -63,10 +95,13 @@ const PostPage = () => {
     })
       .then((response) => response.json())
       .then((data) => {
-        setComments([...comments, data]);
+        const parsedData = data.body ? JSON.parse(data.body) : data;
+        // Assuming parsedData contains the new comment (or adjust accordingly)
+        setComments([...comments, parsedData]);
         setNewComment("");
       })
       .catch((error) => console.error("Error creating comment:", error));
+    
 
   };
 
