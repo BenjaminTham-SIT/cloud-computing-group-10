@@ -4,7 +4,6 @@ import { useAuth } from "react-oidc-context";
 import { Link } from "react-router-dom";
 
 const HomePage = () => {
-    
   const auth = useAuth();
   const [topics, setTopics] = useState([]);
   const [newTopic, setNewTopic] = useState({ name: "", description: "" });
@@ -12,12 +11,24 @@ const HomePage = () => {
   // Fetch all topics on component mount
   useEffect(() => {
     const token = auth.user?.id_token; // Get the access token if available
-    const userID = auth.user?.profile.userID;
+    // const userID = auth.user?.profile?.sub;
+    // const userID = auth.user?.profile.userID;
 
-    console.log("id token   " + auth.user?.id_token);
-    console.log("access token   " + auth.user?.access_token);
-    
-    console.log("user id  " + userID);
+    // Use token to get user id
+    if (token) {
+      const tokenPayload = JSON.parse(atob(token.split('.')[1])); // Decode the JWT token
+      console.log('Decoded Token Payload:', tokenPayload);
+      const userID = tokenPayload.sub; // 'sub' is the standard unique identifier
+      const username = tokenPayload['cognito:username'];
+      const email = auth.user?.profile.email;
+      // const username = auth.user?.profile;
+
+      console.log('username:', username);
+      console.log('userid:', userID);
+      console.log('email:', email);
+      console.log(auth.user?.id_token)
+    }
+  
     
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics", {
       headers: token ? { Authorization: `Bearer ${token}` } : {}

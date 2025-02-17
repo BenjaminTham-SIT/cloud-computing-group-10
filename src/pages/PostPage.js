@@ -163,7 +163,9 @@ useEffect(() => {
 
       fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/updateComment", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}`})
+         },
         body: JSON.stringify(payload),
       })
         .then((response) => response.json())
