@@ -28,23 +28,47 @@ const PostPage = () => {
   //     .then((data) => setComments(data))
   //     .catch((error) => console.error("Error fetching comments:", error));
   // }, [postId, token]);
+
+
+  // useEffect(() => {
+  //   fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`, {
+  //     headers: token ? { Authorization: `Bearer ${token}` } : {}
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       // If the API response wraps your data in a "body" property, parse it first.
+  //       const parsedData = data.body ? JSON.parse(data.body) : data;
+  //       console.log("Parsed response:", parsedData);
+  //       if (!Array.isArray(parsedData.data)) {
+  //         console.error("Expected an array for comments, got:", parsedData.data);
+  //         return;
+  //       }
+  //       setComments(parsedData.data);
+  //     })
+  //     .catch((error) => console.error("Error fetching comments:", error));
+  // }, [postId, token]);
   useEffect(() => {
-    fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
+  fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      const parsedData = data.body ? JSON.parse(data.body) : data;
+      console.log("Parsed response:", parsedData);
+      let commentsArray;
+      if (Array.isArray(parsedData)) {
+        commentsArray = parsedData;
+      } else if (Array.isArray(parsedData.data)) {
+        commentsArray = parsedData.data;
+      } else {
+        console.error("Expected an array for comments, got:", parsedData);
+        return;
+      }
+      setComments(commentsArray);
     })
-      .then((response) => response.json())
-      .then((data) => {
-        // If the API response wraps your data in a "body" property, parse it first.
-        const parsedData = data.body ? JSON.parse(data.body) : data;
-        if (!Array.isArray(parsedData.data)) {
-          console.error("Expected an array for comments, got:", parsedData.data);
-          return;
-        }
-        setComments(parsedData.data);
-      })
-      .catch((error) => console.error("Error fetching comments:", error));
-  }, [postId, token]);
-  
+    .catch((error) => console.error("Error fetching comments:", error));
+}, [postId, token]);
+
 
   const handleNewCommentChange = (e) => {
     setNewComment(e.target.value);
