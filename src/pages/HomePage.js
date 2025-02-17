@@ -12,7 +12,7 @@ const HomePage = () => {
   // Fetch all topics on component mount
   useEffect(() => {
     const token = auth.user?.id_token; // Get the access token if available
-    const userID = auth.user?.userID;
+    const userID = auth.user?.profile.userID;
 
     console.log("id token   " + auth.user?.id_token);
     console.log("access token   " + auth.user?.access_token);
