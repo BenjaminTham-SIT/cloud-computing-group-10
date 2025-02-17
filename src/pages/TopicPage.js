@@ -17,7 +17,7 @@ const TopicPage = () => {
   // Use token to get user id
   if (token) {
     const tokenPayload = JSON.parse(atob(token.split('.')[1])); // Decode the JWT token
-    console.log('Decoded Token Payload:', tokenPayload);
+    // console.log('Decoded Token Payload:', tokenPayload);
     const userID = tokenPayload.sub; // 'sub' is the standard unique identifier
     const username = tokenPayload['cognito:username'];
     const email = auth.user?.profile.email;
@@ -31,7 +31,7 @@ const TopicPage = () => {
 
   // Fetch posts for the given topic using the access token
   useEffect(() => {
-    console.log("Current topicId:", topicId);
+    // console.log("Current topicId:", topicId);
     fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
@@ -58,7 +58,7 @@ const TopicPage = () => {
 
   const handleSubmit = (e) => {
     const tokenPayload = JSON.parse(atob(token.split('.')[1])); // Decode the JWT token
-    console.log('Decoded Token Payload:', tokenPayload);
+    // console.log('Decoded Token Payload:', tokenPayload);
     const userID = tokenPayload.sub; // 'sub' is the standard unique identifier
     const username = tokenPayload['cognito:username'];
     const email = auth.user?.profile.email;
@@ -86,11 +86,18 @@ const TopicPage = () => {
         return response.json();
       })
       .then((data) => {
-        const parsedData = data.body ? JSON.parse(data.body) : data;
-        setPosts([...posts, parsedData]);
         setNewPost({ name: "", content: "" });
+        // Re-fetch posts after new post creation
+        return fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
       })
-      .catch((error) => console.error("Error creating post:", error));
+      .then((response) => response.json())
+      .then((data) => {
+        const parsedData = data.body ? JSON.parse(data.body) : data;
+        setPosts(parsedData.data);
+      })
+      .catch((error) => console.error("Error after creating post:", error));
   };
   
   return (
