@@ -10,7 +10,7 @@ const TopicPage = () => {
   // Fetch posts for the given topic. Adjust query parameters as needed.
   useEffect(() => {
     console.log("Current topicId:", topicId);
-    fetch(`https://mdycmjdjc2.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`)
+    fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`)
       .then((response) => response.json())
       .then((data) => setPosts(data))
       .catch((error) => console.error("Error fetching posts:", error));
