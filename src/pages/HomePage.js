@@ -41,6 +41,7 @@ const HomePage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("Submitting new topic:", newTopic);
     const token = auth.user?.id_token; // Retrieve the token again
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newTopic", {
       method: "POST",
@@ -53,6 +54,7 @@ const HomePage = () => {
       .then((response) => response.json())
       .then((data) => {
         // Optionally, refresh topics list after creation
+        console.log("setting new topic:", newTopic);
         setTopics([...topics, data]);
         setNewTopic({ name: "", description: "" });
       })
