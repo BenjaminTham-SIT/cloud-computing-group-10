@@ -1,19 +1,33 @@
 // /pages/PostPage.js
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { useAuth } from "react-oidc-context";
+
 
 const PostPage = () => {
+  const auth = useAuth();
   const { postId } = useParams();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
 
+  const token = auth.user?.id_token;
+
   // Fetch comments for this post (using post_id as a query parameter)
+  // useEffect(() => {
+  //   fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?post_id=${postId}`)
+  //     .then((response) => response.json())
+  //     .then((data) => setComments(data))
+  //     .catch((error) => console.error("Error fetching comments:", error));
+  // }, [postId]);
+
   useEffect(() => {
-    fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?post_id=${postId}`)
+    fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?post_id=${postId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
       .then((response) => response.json())
       .then((data) => setComments(data))
       .catch((error) => console.error("Error fetching comments:", error));
-  }, [postId]);
+  }, [postId, token]);
 
   const handleNewCommentChange = (e) => {
     setNewComment(e.target.value);
@@ -27,9 +41,24 @@ const PostPage = () => {
       content: newComment,
     };
 
+    // fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newComment", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify(commentData),
+    // })
+    //   .then((response) => response.json())
+    //   .then((data) => {
+    //     setComments([...comments, data]);
+    //     setNewComment("");
+    //   })
+    //   .catch((error) => console.error("Error creating comment:", error));
+
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newComment", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
       body: JSON.stringify(commentData),
     })
       .then((response) => response.json())
@@ -38,6 +67,7 @@ const PostPage = () => {
         setNewComment("");
       })
       .catch((error) => console.error("Error creating comment:", error));
+
   };
 
   const handleCommentEdit = (commentId, currentContent) => {
