@@ -41,9 +41,13 @@ const HomePage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const token = auth.user?.id_token; // Retrieve the token again
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newTopic", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
       body: JSON.stringify(newTopic),
     })
       .then((response) => response.json())
@@ -54,6 +58,7 @@ const HomePage = () => {
       })
       .catch((error) => console.error("Error creating topic:", error));
   };
+  
 
   return (
     <div>
