@@ -47,7 +47,30 @@ const PostPage = () => {
   //     })
   //     .catch((error) => console.error("Error fetching comments:", error));
   // }, [postId, token]);
-  useEffect(() => {
+//   useEffect(() => {
+//   fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`, {
+//     headers: token ? { Authorization: `Bearer ${token}` } : {}
+//   })
+//     .then((response) => response.json())
+//     .then((data) => {
+//       const parsedData = data.body ? JSON.parse(data.body) : data;
+//       console.log("Parsed response:", parsedData);
+//       let commentsArray;
+//       if (Array.isArray(parsedData)) {
+//         commentsArray = parsedData;
+//       } else if (Array.isArray(parsedData.data)) {
+//         commentsArray = parsedData.data;
+//       } else {
+//         console.error("Expected an array for comments, got:", parsedData);
+//         return;
+//       }
+//       setComments(commentsArray);
+//     })
+//     .catch((error) => console.error("Error fetching comments:", error));
+// }, [postId, token]);
+
+
+useEffect(() => {
   fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   })
@@ -56,8 +79,8 @@ const PostPage = () => {
       const parsedData = data.body ? JSON.parse(data.body) : data;
       console.log("Parsed response:", parsedData);
       let commentsArray;
-      if (Array.isArray(parsedData)) {
-        commentsArray = parsedData;
+      if (Array.isArray(parsedData.comments)) {
+        commentsArray = parsedData.comments;
       } else if (Array.isArray(parsedData.data)) {
         commentsArray = parsedData.data;
       } else {
