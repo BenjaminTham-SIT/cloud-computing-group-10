@@ -11,12 +11,13 @@ const HomePage = () => {
 
   // Fetch all topics on component mount
   useEffect(() => {
-    console.log("id token   " + auth.user?.id_token);
-    console.log("access token   " + auth.user?.access_token);
-    console.log("user id  " + userID);
     const token = auth.user?.id_token; // Get the access token if available
     const userID = auth.user.userID;
 
+    console.log("id token   " + auth.user?.id_token);
+    console.log("access token   " + auth.user?.access_token);
+    
+    console.log("user id  " + userID);
     
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics", {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
