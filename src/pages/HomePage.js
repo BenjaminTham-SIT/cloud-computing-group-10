@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 const HomePage = () => {
     
-    const auth = useAuth();
+  const auth = useAuth();
   const [topics, setTopics] = useState([]);
   const [newTopic, setNewTopic] = useState({ name: "", description: "" });
 
@@ -16,7 +16,7 @@ const HomePage = () => {
 
     const token = auth.user?.id_token; // Get the access token if available
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics", {
-      headers: token ? { Authorization: `${token}` } : {}
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
       .then((response) => {
         if (!response.ok) {
@@ -25,11 +25,12 @@ const HomePage = () => {
         return response.json();
       })
       .then((data) => {
-        if (!Array.isArray(data)) {
-          console.error("Expected an array but got:", data);
+        const parsedData = data.body ? JSON.parse(data.body) : data;
+        if (!Array.isArray(parsedData.data)) {
+          console.error("Expected an array but got:", parsedData.data);
           return;
         }
-        setTopics(data);
+        setTopics(parsedData.data);
       })
       .catch((error) => console.error("Error fetching topics:", error));
   }, [auth]);
