@@ -1,37 +1,41 @@
+
+
+
+
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useLocation, useParams, Link } from "react-router-dom";
 import { useAuth } from "react-oidc-context";
+
+// --- IMPORT MUI COMPONENTS ---
+import {
+  Container,
+  Typography,
+  TextField,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Box,
+  CircularProgress  // <-- MUI Spinner
+} from "@mui/material";
 
 const TopicPage = () => {
   const { topicId } = useParams();
+  const location = useLocation();
+  const topicName = location.state?.topicName || "Unknown Topic";
   const auth = useAuth();
-  // Use the access_token instead of the id_token
-  // const token = auth.user?.access_token; 
+  const token = auth.user?.id_token;
+
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState({ name: "", content: "" });
+  const [isLoading, setIsLoading] = useState(false); // <-- New loading state
 
-  const token = auth.user?.id_token; // Get the access token if available
-  // const userID = auth.user?.profile?.sub;
-  // const userID = auth.user?.profile.userID;
 
-  // Use token to get user id
-  if (token) {
-    const tokenPayload = JSON.parse(atob(token.split('.')[1])); // Decode the JWT token
-    // console.log('Decoded Token Payload:', tokenPayload);
-    const userID = tokenPayload.sub; // 'sub' is the standard unique identifier
-    const username = tokenPayload['cognito:username'];
-    const email = auth.user?.profile.email;
-    // const username = auth.user?.profile;
-
-    // console.log('username:', username);
-    // console.log('userid:', userID);
-    // console.log('email:', email);
-    // console.log(auth.user?.id_token)
-  }
-
-  // Fetch posts for the given topic using the access token
+  // Fetch posts for the given topic
   useEffect(() => {
-    // console.log("Current topicId:", topicId);
+    setIsLoading(true);
+
     fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
@@ -47,9 +51,11 @@ const TopicPage = () => {
           console.error("Expected an array but got:", parsedData.data);
           return;
         }
-        setPosts(parsedData.data);
+        const filtered = parsedData.data.filter((post) => post.topic_id === parseInt(topicId, 10));
+        setPosts(filtered);
       })
-      .catch((error) => console.error("Error fetching posts:", error));
+      .catch((error) => console.error("Error fetching posts:", error))
+      .finally(()=>setIsLoading(false));
   }, [topicId, token]);
 
   const handleInputChange = (e) => {
@@ -57,27 +63,26 @@ const TopicPage = () => {
   };
 
   const handleSubmit = (e) => {
-    const tokenPayload = JSON.parse(atob(token.split('.')[1])); // Decode the JWT token
-    // console.log('Decoded Token Payload:', tokenPayload);
-    const userID = tokenPayload.sub; // 'sub' is the standard unique identifier
-    const username = tokenPayload['cognito:username'];
-    const email = auth.user?.profile.email;
     e.preventDefault();
-    // Use the token payload from the access token
+    if (!token) return;
+
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+    const userID = tokenPayload.sub;
+
     const postData = {
-      user_id: userID,     
-      topic_id: topicId,   
+      user_id: userID,
+      topic_id: topicId,
       name: newPost.name,
-      content: newPost.content,
+      content: newPost.content
     };
-  
+
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newPost", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...(token && { Authorization: token })
       },
-      body: JSON.stringify(postData),
+      body: JSON.stringify(postData)
     })
       .then((response) => {
         if (!response.ok) {
@@ -85,53 +90,85 @@ const TopicPage = () => {
         }
         return response.json();
       })
-      .then((data) => {
+      .then(() => {
         setNewPost({ name: "", content: "" });
-        // Re-fetch posts after new post creation
-        return fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+        return fetch(
+          `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`,
+          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        );
       })
       .then((response) => response.json())
       .then((data) => {
         const parsedData = data.body ? JSON.parse(data.body) : data;
-        setPosts(parsedData.data);
+        if (!Array.isArray(parsedData.data)) {
+          console.error("Expected an array but got:", parsedData.data);
+          return;
+        }
+        const filtered = parsedData.data.filter((post) => post.topic_id === parseInt(topicId, 10));
+        setPosts(filtered);
       })
       .catch((error) => console.error("Error after creating post:", error));
   };
-  
-  return (
-    <div>
-      <h1>Posts for Topic {topicId}</h1>
-      <ul>
-        {posts.map((post) => (
-          <li key={post.id}>
-            <Link to={`/post/${post.id}`}>{post.name}</Link>
-            <p>{post.content}</p>
-          </li>
-        ))}
-      </ul>
 
-      <h2>Create a New Post</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
+  return (
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+            {isLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <>
+
+      <Typography variant="h4" gutterBottom>
+        Posts for {topicName}
+      </Typography>
+
+      <List sx={{ mb: 4 }}>
+        {posts.map((post) => (
+          <Paper key={post.post_id} sx={{ mb: 2 }}>
+            <ListItem
+              button
+              component={Link}
+              to={`/post/${post.post_id}`}
+              state={{ postTitle: post.name, postContent: post.content }}
+            >
+              <ListItemText
+                primary={post.name}
+                secondary={post.content}
+              />
+            </ListItem>
+          </Paper>
+        ))}
+      </List>
+
+      <Typography variant="h5" gutterBottom>
+        Create a New Post
+      </Typography>
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: "400px" }}>
+        <TextField
+          label="Post Title"
           name="name"
-          placeholder="Post Title"
           value={newPost.name}
           onChange={handleInputChange}
           required
         />
-        <textarea
+        <TextField
+          label="Content"
           name="content"
-          placeholder="Content"
           value={newPost.content}
           onChange={handleInputChange}
+          multiline
+          minRows={3}
           required
         />
-        <button type="submit">Create Post</button>
-      </form>
-    </div>
+        <Button variant="contained" type="submit">
+          Create Post
+        </Button>
+      </Box>
+              </>
+            )}
+    </Container>
+    
   );
 };
 
