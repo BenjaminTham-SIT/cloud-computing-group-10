@@ -195,7 +195,7 @@ const PostPage = () => {
     const userID = tokenPayload.sub;
 
     const payload = {
-      user_id: userID,
+      user_id: "0",
       post_id: postId,
       content: newComment
     };

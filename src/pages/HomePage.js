@@ -35,10 +35,10 @@ function HomePage() {
       const decodedPayload = JSON.parse(window.atob(base64));
 
       // 3) Log username, userId (sub), email, and the full token
-      // console.log("Username:", decodedPayload["cognito:username"]); 
-      // console.log("User ID (sub):", decodedPayload.sub);
-      // console.log("Email:", decodedPayload.email);
-      // console.log("idToken:", token);
+      console.log("Username:", decodedPayload["cognito:username"]); 
+      console.log("User ID (sub):", decodedPayload.sub);
+      console.log("Email:", decodedPayload.email);
+      console.log("idToken:", token);
     } catch (decodeError) {
       console.error("Failed to decode token payload:", decodeError);
     }

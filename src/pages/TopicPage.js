@@ -25,6 +25,7 @@ const TopicPage = () => {
   // Fetch posts for the given topic
   useEffect(() => {
     setIsLoading(true);
+    console.log(topicId)
 
     const token = sessionStorage.getItem("idToken");
     if (!token) {
@@ -76,11 +77,17 @@ const TopicPage = () => {
     const userID = tokenPayload.sub;
 
     const postData = {
-      user_id: userID,
+      user_id: "0",
       topic_id: topicId,
       name: newPost.name,
       content: newPost.content
     };
+
+    console.log(userID)
+    console.log(topicId)
+    console.log(newPost.name)
+    console.log(newPost.content)
+
 
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newPost", {
       method: "POST",
