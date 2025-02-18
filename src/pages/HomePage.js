@@ -1,15 +1,8 @@
-
-
-
-
-// HomePage.js
 import React, { useState, useEffect } from "react";
-import { useAuth } from "react-oidc-context";
 import { Link } from "react-router-dom";
 import {
   Container,
   Typography,
-  TextField,
   Button,
   List,
   ListItem,
@@ -17,29 +10,41 @@ import {
   Paper,
   Box,
   Alert,
-  CircularProgress  // <-- MUI Spinner
+  CircularProgress,
+  TextField
 } from "@mui/material";
 
-const HomePage = () => {
-  const auth = useAuth();
+function HomePage() {
   const [topics, setTopics] = useState([]);
   const [newTopic, setNewTopic] = useState({ name: "", description: "" });
   const [errorMessage, setErrorMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // <-- New loading state
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const token = auth.user?.id_token;
-
-    // If no token, show an error message immediately (skip fetch)
+    // 1) Retrieve the token from sessionStorage
+    const token = sessionStorage.getItem("idToken");
     if (!token) {
       setErrorMessage("You must be logged in to view topics.");
       return;
     }
 
-    // Start loading
-    setIsLoading(true);
+    // 2) Decode the token payload to get user info
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const decodedPayload = JSON.parse(window.atob(base64));
 
-    // If we do have a token, fetch topics
+      // 3) Log username, userId (sub), email, and the full token
+      // console.log("Username:", decodedPayload["cognito:username"]); 
+      // console.log("User ID (sub):", decodedPayload.sub);
+      // console.log("Email:", decodedPayload.email);
+      // console.log("idToken:", token);
+    } catch (decodeError) {
+      console.error("Failed to decode token payload:", decodeError);
+    }
+
+    // 4) Proceed with fetching topics
+    setIsLoading(true);
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics", {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -65,11 +70,8 @@ const HomePage = () => {
         console.error("Error fetching topics:", error);
         setErrorMessage(error.message);
       })
-      .finally(() => {
-        // Always end loading state, success or error
-        setIsLoading(false);
-      });
-  }, [auth]);
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const handleInputChange = (e) => {
     setNewTopic({ ...newTopic, [e.target.name]: e.target.value });
@@ -77,7 +79,7 @@ const HomePage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const token = auth.user?.id_token;
+    const token = sessionStorage.getItem("idToken");
     if (!token) {
       setErrorMessage("You must be logged in to create topics.");
       return;
@@ -103,26 +105,23 @@ const HomePage = () => {
       });
   };
 
+  const hasToken = !!sessionStorage.getItem("idToken");
+
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Typography variant="h3" gutterBottom>
-        Forum Topics
-      </Typography>
-
+      <Typography variant="h3" gutterBottom>Forum Topics</Typography>
       {errorMessage && (
         <Box sx={{ mb: 2 }}>
           <Alert severity="error">{errorMessage}</Alert>
         </Box>
       )}
 
-      {/* If currently loading, show the spinner and skip the rest */}
       {isLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
           <CircularProgress />
         </Box>
       ) : (
         <>
-          {/* Only show topics if we actually have some loaded */}
           {topics.length > 0 && (
             <List>
               {topics.map((topic) => (
@@ -133,18 +132,14 @@ const HomePage = () => {
                     to={`/topic/${topic.topic_id}`}
                     state={{ topicName: topic.name }}
                   >
-                    <ListItemText
-                      primary={topic.name}
-                      secondary={topic.description}
-                    />
+                    <ListItemText primary={topic.name} secondary={topic.description} />
                   </ListItem>
                 </Paper>
               ))}
             </List>
           )}
 
-          {/* Conditionally show the "Create a New Topic" form only if the user is authenticated */}
-          {auth.isAuthenticated ? (
+          {hasToken ? (
             <>
               <Typography variant="h5" gutterBottom>
                 Create a New Topic
@@ -182,6 +177,6 @@ const HomePage = () => {
       )}
     </Container>
   );
-};
+}
 
 export default HomePage;

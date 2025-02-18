@@ -5,7 +5,7 @@
   "dependencies": {
     "@aws-amplify/auth": "^6.11.0",
     "@aws-amplify/ui-react": "^6.9.1",
-    "@aws-sdk/client-cognito-identity-provider": "^3.749.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.750.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.4.4",

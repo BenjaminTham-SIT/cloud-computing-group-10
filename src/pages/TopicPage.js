@@ -1,12 +1,5 @@
-
-
-
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useParams, Link } from "react-router-dom";
-import { useAuth } from "react-oidc-context";
-
-// --- IMPORT MUI COMPONENTS ---
 import {
   Container,
   Typography,
@@ -17,28 +10,33 @@ import {
   ListItemText,
   Paper,
   Box,
-  CircularProgress  // <-- MUI Spinner
+  CircularProgress
 } from "@mui/material";
 
 const TopicPage = () => {
   const { topicId } = useParams();
   const location = useLocation();
   const topicName = location.state?.topicName || "Unknown Topic";
-  const auth = useAuth();
-  const token = auth.user?.id_token;
 
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState({ name: "", content: "" });
-  const [isLoading, setIsLoading] = useState(false); // <-- New loading state
-
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch posts for the given topic
   useEffect(() => {
     setIsLoading(true);
 
-    fetch(`https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    })
+    const token = sessionStorage.getItem("idToken");
+    if (!token) {
+      console.error("No token found; user not logged in?");
+      setIsLoading(false);
+      return;
+    }
+
+    fetch(
+      `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -51,12 +49,14 @@ const TopicPage = () => {
           console.error("Expected an array but got:", parsedData.data);
           return;
         }
-        const filtered = parsedData.data.filter((post) => post.topic_id === parseInt(topicId, 10));
+        const filtered = parsedData.data.filter(
+          (post) => post.topic_id === parseInt(topicId, 10)
+        );
         setPosts(filtered);
       })
       .catch((error) => console.error("Error fetching posts:", error))
-      .finally(()=>setIsLoading(false));
-  }, [topicId, token]);
+      .finally(() => setIsLoading(false));
+  }, [topicId]);
 
   const handleInputChange = (e) => {
     setNewPost({ ...newPost, [e.target.name]: e.target.value });
@@ -64,8 +64,14 @@ const TopicPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!token) return;
 
+    const token = sessionStorage.getItem("idToken");
+    if (!token) {
+      console.error("No token found; user not logged in");
+      return;
+    }
+
+    // decode token to get user id
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const userID = tokenPayload.sub;
 
@@ -80,7 +86,7 @@ const TopicPage = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token && { Authorization: token })
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(postData)
     })
@@ -91,10 +97,10 @@ const TopicPage = () => {
         return response.json();
       })
       .then(() => {
-        setNewPost({ name: "", content: "" });
+        // re-fetch posts to show new one
         return fetch(
           `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`,
-          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       })
       .then((response) => response.json())
@@ -104,7 +110,9 @@ const TopicPage = () => {
           console.error("Expected an array but got:", parsedData.data);
           return;
         }
-        const filtered = parsedData.data.filter((post) => post.topic_id === parseInt(topicId, 10));
+        const filtered = parsedData.data.filter(
+          (post) => post.topic_id === parseInt(topicId, 10)
+        );
         setPosts(filtered);
       })
       .catch((error) => console.error("Error after creating post:", error));
@@ -112,63 +120,62 @@ const TopicPage = () => {
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
-            {isLoading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <>
+      {isLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <Typography variant="h4" gutterBottom>
+            Posts for {topicName}
+          </Typography>
 
-      <Typography variant="h4" gutterBottom>
-        Posts for {topicName}
-      </Typography>
+          <List sx={{ mb: 4 }}>
+            {posts.map((post) => (
+              <Paper key={post.post_id} sx={{ mb: 2 }}>
+                <ListItem
+                  button
+                  component={Link}
+                  to={`/post/${post.post_id}`}
+                  state={{ postTitle: post.name, postContent: post.content }}
+                >
+                  <ListItemText primary={post.name} secondary={post.content} />
+                </ListItem>
+              </Paper>
+            ))}
+          </List>
 
-      <List sx={{ mb: 4 }}>
-        {posts.map((post) => (
-          <Paper key={post.post_id} sx={{ mb: 2 }}>
-            <ListItem
-              button
-              component={Link}
-              to={`/post/${post.post_id}`}
-              state={{ postTitle: post.name, postContent: post.content }}
-            >
-              <ListItemText
-                primary={post.name}
-                secondary={post.content}
-              />
-            </ListItem>
-          </Paper>
-        ))}
-      </List>
-
-      <Typography variant="h5" gutterBottom>
-        Create a New Post
-      </Typography>
-      <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: "400px" }}>
-        <TextField
-          label="Post Title"
-          name="name"
-          value={newPost.name}
-          onChange={handleInputChange}
-          required
-        />
-        <TextField
-          label="Content"
-          name="content"
-          value={newPost.content}
-          onChange={handleInputChange}
-          multiline
-          minRows={3}
-          required
-        />
-        <Button variant="contained" type="submit">
-          Create Post
-        </Button>
-      </Box>
-              </>
-            )}
+          <Typography variant="h5" gutterBottom>
+            Create a New Post
+          </Typography>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: "400px" }}
+          >
+            <TextField
+              label="Post Title"
+              name="name"
+              value={newPost.name}
+              onChange={handleInputChange}
+              required
+            />
+            <TextField
+              label="Content"
+              name="content"
+              value={newPost.content}
+              onChange={handleInputChange}
+              multiline
+              minRows={3}
+              required
+            />
+            <Button variant="contained" type="submit">
+              Create Post
+            </Button>
+          </Box>
+        </>
+      )}
     </Container>
-    
   );
 };
 

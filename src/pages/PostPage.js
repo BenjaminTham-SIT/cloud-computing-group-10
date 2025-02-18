@@ -1,10 +1,5 @@
-
-
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import { useAuth } from "react-oidc-context";
-
-// --- IMPORT MUI COMPONENTS ---
 import {
   Container,
   Typography,
@@ -19,7 +14,6 @@ import {
 } from "@mui/material";
 
 const PostPage = () => {
-  const auth = useAuth();
   const { postId } = useParams();
   const location = useLocation();
   const postTitle = location.state?.postTitle || "Unknown Title";
@@ -30,19 +24,23 @@ const PostPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [imageURL, setImageURL] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
-
-  const token = auth.user?.id_token;
-
   const [isLoading, setIsLoading] = useState(false);
 
-
-  // 1) Fetch comments on mount
+  // On mount, fetch comments for this post
   useEffect(() => {
     setIsLoading(true);
 
+    const token = sessionStorage.getItem("idToken");
+    // If no token, you can decide to skip fetch or show a "please login" message
+    if (!token) {
+      console.error("No token in sessionStorage; user is not logged in?");
+      setIsLoading(false);
+      return;
+    }
+
     fetch(
       `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
-      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      { headers: { Authorization: `Bearer ${token}` } }
     )
       .then((response) => response.json())
       .then((data) => {
@@ -53,6 +51,7 @@ const PostPage = () => {
         } else if (Array.isArray(parsedData.data)) {
           allComments = parsedData.data;
         }
+        // Filter comments that match this post
         const filtered = allComments.filter(
           (comment) => comment.post_id === parseInt(postId, 10)
         );
@@ -60,45 +59,65 @@ const PostPage = () => {
       })
       .catch((error) => console.error("Error fetching comments:", error))
       .finally(() => setIsLoading(false));
-  }, [postId, token]);
+  }, [postId]);
 
-  // 2) Edit a comment
+  // Editing a comment
   const handleCommentEdit = (commentId, currentContent) => {
     const updatedContent = prompt("Edit your comment:", currentContent);
-    if (updatedContent) {
-      const payload = {
-        user_id: "currentUserId", // Replace with actual user id
-        comment_id: commentId,
-        content: updatedContent
-      };
+    if (!updatedContent) return;
 
-      fetch(
-        "https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/updateComment",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token && { Authorization: `Bearer ${token}` })
-          },
-          body: JSON.stringify(payload)
-        }
-      )
-        .then((response) => response.json())
-        .then((updatedComment) => {
-          setComments((prev) =>
-            prev.map((comment) =>
-              comment.id === commentId ? updatedComment : comment
-            )
-          );
-        })
-        .catch((error) => console.error("Error updating comment:", error));
+    const token = sessionStorage.getItem("idToken");
+    if (!token) {
+      console.error("No token found; user not logged in");
+      return;
     }
+
+    // You may decode to find user_id if your Lambda requires it
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+    const userID = tokenPayload.sub;
+
+    const payload = {
+      user_id: userID,
+      comment_id: commentId,
+      content: updatedContent
+    };
+
+    fetch(
+      "https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/updateComment",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      }
+    )
+      .then((response) => response.json())
+      .then((updatedComment) => {
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === commentId ? updatedComment : comment
+          )
+        );
+      })
+      .catch((error) => console.error("Error updating comment:", error));
   };
 
-  // 3) Delete a comment
+  // Deleting a comment
   const handleCommentDelete = (commentId) => {
+    const token = sessionStorage.getItem("idToken");
+    if (!token) {
+      console.error("No token found; user not logged in");
+      return;
+    }
+
+    // Optionally decode the token to get user_id if your Lambda needs it
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+    const userID = tokenPayload.sub;
+
     const payload = {
-      user_id: "currentUserId",
+      user_id: userID,
       comment_id: commentId
     };
 
@@ -118,7 +137,7 @@ const PostPage = () => {
       .catch((error) => console.error("Error deleting comment:", error));
   };
 
-  // 4) File / S3 Logic
+  // Handling file upload
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     setSelectedFile(file);
@@ -148,25 +167,30 @@ const PostPage = () => {
       const response = await fetch(
         "https://pwsgthrir2.execute-api.us-east-1.amazonaws.com/test-stage/retrieve-data-s3"
       );
-      if (response.ok) {
-        const data = await response.json();
-        const responseBody = JSON.parse(data.body);
-        const base64Image = responseBody.file_content;
-        const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-        setImageURL(imageUrl);
-      } else {
+      if (!response.ok) {
         alert("Failed to fetch image from S3");
+        return;
       }
+      const data = await response.json();
+      const responseBody = JSON.parse(data.body);
+      const base64Image = responseBody.file_content;
+      const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+      setImageURL(imageUrl);
     } catch (error) {
       console.error("Error fetching image:", error);
     }
   };
 
-  // 5) Add a new comment
+  // Submitting a new comment
   const handleNewCommentSubmit = (e) => {
     e.preventDefault();
-    if (!token) return;
+    const token = sessionStorage.getItem("idToken");
+    if (!token) {
+      console.error("No token found; user is not logged in");
+      return;
+    }
 
+    // Decode to get userID
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const userID = tokenPayload.sub;
 
@@ -182,17 +206,17 @@ const PostPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` })
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       }
     )
       .then((response) => response.json())
       .then(() => {
-        // Re-fetch all comments
+        // re-fetch comments after posting
         return fetch(
           `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
-          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       })
       .then((res) => res.json())
@@ -215,105 +239,112 @@ const PostPage = () => {
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
-
       {isLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
           <CircularProgress />
         </Box>
       ) : (
         <>
+          <Typography variant="h4" gutterBottom>
+            {postTitle}
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 3 }}>
+            {postContent}
+          </Typography>
 
-      <Typography variant="h4" gutterBottom>
-        {postTitle}
-      </Typography>
-      <Typography variant="body1" sx={{ mb: 3 }}>
-        {postContent}
-      </Typography>
+          <Typography variant="h5" gutterBottom>
+            Comments
+          </Typography>
+          <List sx={{ mb: 3 }}>
+            {comments.map((comment) => (
+              <Paper key={comment.id} sx={{ mb: 2, p: 2 }}>
+                <ListItem disablePadding>
+                  <ListItemText primary={comment.content} />
+                </ListItem>
+                <Box sx={{ mt: 1 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleCommentEdit(comment.id, comment.content)}
+                    sx={{ mr: 1 }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={() => handleCommentDelete(comment.id)}
+                  >
+                    Delete
+                  </Button>
+                </Box>
+              </Paper>
+            ))}
+          </List>
 
-      <Typography variant="h5" gutterBottom>
-        Comments
-      </Typography>
-      <List sx={{ mb: 3 }}>
-        {comments.map((comment) => (
-          <Paper key={comment.id} sx={{ mb: 2, p: 2 }}>
-            <ListItem disablePadding>
-              <ListItemText primary={comment.content} />
-            </ListItem>
-            <Box sx={{ mt: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => handleCommentEdit(comment.id, comment.content)}
-                sx={{ mr: 1 }}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                onClick={() => handleCommentDelete(comment.id)}
-              >
-                Delete
-              </Button>
-            </Box>
-          </Paper>
-        ))}
-      </List>
-
-      <Typography variant="h6" gutterBottom>
-        Add a Comment
-      </Typography>
-      <Box component="form" onSubmit={handleNewCommentSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {filePreview && (
-          <>
-            {selectedFile?.type.startsWith("image/") ? (
-              <Box component="img" src={filePreview} alt="Selected Preview" width="300px" />
-            ) : selectedFile?.type.startsWith("video/") ? (
-              <video width="300" controls>
-                <source src={filePreview} type={selectedFile.type} />
-                Your browser does not support the video tag.
-              </video>
-            ) : (
-              <Typography color="text.secondary">Unsupported file type</Typography>
+          <Typography variant="h6" gutterBottom>
+            Add a Comment
+          </Typography>
+          <Box
+            component="form"
+            onSubmit={handleNewCommentSubmit}
+            sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+          >
+            {filePreview && (
+              <>
+                {selectedFile?.type.startsWith("image/") ? (
+                  <Box
+                    component="img"
+                    src={filePreview}
+                    alt="Selected Preview"
+                    width="300px"
+                  />
+                ) : selectedFile?.type.startsWith("video/") ? (
+                  <video width="300" controls>
+                    <source src={filePreview} type={selectedFile.type} />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <Typography color="text.secondary">Unsupported file type</Typography>
+                )}
+              </>
             )}
-          </>
-        )}
 
-        <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
-          Upload Image/Video
-          <input
-            type="file"
-            accept="image/*, video/*"
-            hidden
-            onChange={handleFileChange}
-          />
-        </Button>
+            <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
+              Upload Image/Video
+              <input
+                type="file"
+                accept="image/*, video/*"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Button>
 
-        <TextField
-          label="Your comment"
-          multiline
-          minRows={3}
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          required
-        />
+            <TextField
+              label="Your comment"
+              multiline
+              minRows={3}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              required
+            />
 
-        <Button variant="contained" type="submit">
-          Post Comment
-        </Button>
-      </Box>
+            <Button variant="contained" type="submit">
+              Post Comment
+            </Button>
+          </Box>
 
-      <Box sx={{ mt: 3 }}>
-        {imageURL ? (
-          <img src={imageURL} alt="Fetched from S3" style={{ width: "300px" }} />
-        ) : (
-          <Button variant="outlined" onClick={fetchImageFromS3}>
-            Fetch Image from S3
-          </Button>
-        )}
-      </Box>
-      </>
+          <Box sx={{ mt: 3 }}>
+            {imageURL ? (
+              <img src={imageURL} alt="Fetched from S3" style={{ width: "300px" }} />
+            ) : (
+              <Button variant="outlined" onClick={fetchImageFromS3}>
+                Fetch Image from S3
+              </Button>
+            )}
+          </Box>
+        </>
       )}
     </Container>
   );
