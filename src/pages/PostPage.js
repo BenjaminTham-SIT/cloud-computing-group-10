@@ -261,7 +261,7 @@ const PostPage = () => {
                 <ListItem disablePadding>
                   <ListItemText primary={comment.content} />
                 </ListItem>
-                <Box sx={{ mt: 1 }}>
+                {/* <Box sx={{ mt: 1 }}>
                   <Button
                     variant="outlined"
                     size="small"
@@ -278,7 +278,7 @@ const PostPage = () => {
                   >
                     Delete
                   </Button>
-                </Box>
+                </Box> */}
               </Paper>
             ))}
           </List>
