@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Container,
   Typography,
+  TextField,
   Button,
   List,
   ListItem,
@@ -10,8 +11,7 @@ import {
   Paper,
   Box,
   Alert,
-  CircularProgress,
-  TextField
+  CircularProgress
 } from "@mui/material";
 
 function HomePage() {
@@ -19,31 +19,15 @@ function HomePage() {
   const [newTopic, setNewTopic] = useState({ name: "", description: "" });
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    // 1) Retrieve the token from sessionStorage
+  // Function to fetch topics from API
+  const fetchTopics = () => {
     const token = sessionStorage.getItem("idToken");
     if (!token) {
       setErrorMessage("You must be logged in to view topics.");
       return;
     }
-
-    // 2) Decode the token payload to get user info
-    try {
-      const base64Url = token.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const decodedPayload = JSON.parse(window.atob(base64));
-
-      // 3) Log username, userId (sub), email, and the full token
-      console.log("Username:", decodedPayload["cognito:username"]); 
-      console.log("User ID (sub):", decodedPayload.sub);
-      console.log("Email:", decodedPayload.email);
-      console.log("idToken:", token);
-    } catch (decodeError) {
-      console.error("Failed to decode token payload:", decodeError);
-    }
-
-    // 4) Proceed with fetching topics
     setIsLoading(true);
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics", {
       headers: { Authorization: `Bearer ${token}` }
@@ -71,6 +55,11 @@ function HomePage() {
         setErrorMessage(error.message);
       })
       .finally(() => setIsLoading(false));
+  };
+
+  // Initial fetch of topics
+  useEffect(() => {
+    fetchTopics();
   }, []);
 
   const handleInputChange = (e) => {
@@ -85,6 +74,7 @@ function HomePage() {
       return;
     }
 
+    // Post new topic and then re-fetch the list so that the UI updates immediately.
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newTopic", {
       method: "POST",
       headers: {
@@ -93,11 +83,16 @@ function HomePage() {
       },
       body: JSON.stringify(newTopic)
     })
-      .then((response) => response.json())
-      .then((data) => {
-        setTopics([...topics, data]);
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(() => {
         setNewTopic({ name: "", description: "" });
-        setErrorMessage("");
+        // Re-fetch topics after new topic creation.
+        fetchTopics();
       })
       .catch((error) => {
         console.error("Error creating topic:", error);
@@ -105,11 +100,26 @@ function HomePage() {
       });
   };
 
-  const hasToken = !!sessionStorage.getItem("idToken");
+  // Filter topics by search term (case-insensitive)
+  const filteredTopics = topics.filter((topic) =>
+    topic.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Typography variant="h3" gutterBottom>Forum Topics</Typography>
+
+      {/* Search bar */}
+      <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
+        <TextField
+          label="Search by Title"
+          variant="outlined"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          fullWidth
+        />
+      </Box>
+
       {errorMessage && (
         <Box sx={{ mb: 2 }}>
           <Alert severity="error">{errorMessage}</Alert>
@@ -122,9 +132,9 @@ function HomePage() {
         </Box>
       ) : (
         <>
-          {topics.length > 0 && (
+          {filteredTopics.length > 0 ? (
             <List>
-              {topics.map((topic) => (
+              {filteredTopics.map((topic) => (
                 <Paper key={topic.topic_id} sx={{ mb: 2 }}>
                   <ListItem
                     button
@@ -137,42 +147,39 @@ function HomePage() {
                 </Paper>
               ))}
             </List>
-          )}
-
-          {hasToken ? (
-            <>
-              <Typography variant="h5" gutterBottom>
-                Create a New Topic
-              </Typography>
-              <Box
-                component="form"
-                onSubmit={handleSubmit}
-                sx={{ display: "flex", gap: 2, flexDirection: "column", maxWidth: "400px" }}
-              >
-                <TextField
-                  label="Topic Name"
-                  name="name"
-                  value={newTopic.name}
-                  onChange={handleInputChange}
-                  required
-                />
-                <TextField
-                  label="Description"
-                  name="description"
-                  value={newTopic.description}
-                  onChange={handleInputChange}
-                  required
-                />
-                <Button variant="contained" type="submit">
-                  Create Topic
-                </Button>
-              </Box>
-            </>
           ) : (
-            <Typography variant="body1" sx={{ mt: 4 }}>
-              Please log in to create new topics.
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              No topics found.
             </Typography>
           )}
+
+          {/* Form to create a new topic */}
+          <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
+            Create a New Topic
+          </Typography>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{ display: "flex", gap: 2, flexDirection: "column", maxWidth: "400px" }}
+          >
+            <TextField
+              label="Topic Name"
+              name="name"
+              value={newTopic.name}
+              onChange={handleInputChange}
+              required
+            />
+            <TextField
+              label="Description"
+              name="description"
+              value={newTopic.description}
+              onChange={handleInputChange}
+              required
+            />
+            <Button variant="contained" type="submit">
+              Create Topic
+            </Button>
+          </Box>
         </>
       )}
     </Container>
