@@ -155,15 +155,41 @@ const PostPage = () => {
       "https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/deleteComment",
       {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+         },
         body: JSON.stringify(payload)
       }
     )
-      .then((response) => {
-        if (response.ok) {
-          setComments((prev) => prev.filter((c) => c.id !== commentId));
-        }
-      })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(() => {
+      // re-fetch comments after deleting
+      return fetch(
+        `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      const parsedData = data.body ? JSON.parse(data.body) : data;
+      let allComments = [];
+      if (Array.isArray(parsedData.comments)) {
+        allComments = parsedData.comments;
+      } else if (Array.isArray(parsedData.data)) {
+        allComments = parsedData.data;
+      }
+      const filtered = allComments.filter(
+        (comment) => comment.post_id === parseInt(postId, 10)
+      );
+      setComments(filtered);
+      setNewComment("");
+    })
       .catch((error) => console.error("Error deleting comment:", error));
   };
 
@@ -321,7 +347,7 @@ const PostPage = () => {
                         variant="outlined"
                         color="error"
                         size="small"
-                        onClick={() => handleCommentDelete(comment.id)}
+                        onClick={() => handleCommentDelete(comment.comment_id)}
                       >
                         Delete
                       </Button>
