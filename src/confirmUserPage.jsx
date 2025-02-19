@@ -13,10 +13,11 @@ import {
 const ConfirmUserPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { username = "", email = "" } = location.state || {};
+  const { username = "", email = "", user_id} = location.state || {};
 
   // Use controlled inputs; now include a password for auto sign in.
   const [userEmail, setUserEmail] = useState(email);
+  const [userID, setUserId] = useState(user_id);
   const [confirmationCode, setConfirmationCode] = useState("");
   const [password, setPassword] = useState(""); // New field
 
@@ -25,11 +26,51 @@ const ConfirmUserPage = () => {
     try {
       // Confirm the user
       await confirmSignUp(username, confirmationCode);
+
       // Auto sign in using username and password
       const session = await signIn(username, password);
       if (session && session.AccessToken) {
         sessionStorage.setItem("accessToken", session.AccessToken);
-        // Optionally store idToken, refreshToken as well
+
+        const idToken = session.IdToken;
+        let userId = null;
+        
+        if (idToken) {
+          try {
+            const tokenPayload = JSON.parse(atob(idToken.split(".")[1]));
+            userId = tokenPayload.sub;
+
+            setUserId(userId);
+
+          } catch (error) {
+            console.error("Failed to decode token:", error);
+          }
+        }
+
+        // Call API to insert new user into the database
+        const newUser = {
+          userId: userId,
+          username: username,
+          email: userEmail,
+        };
+
+        console.log(newUser);
+
+        const response = await fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newUser", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`
+          },
+          body: JSON.stringify(newUser)
+        });
+
+        console.log(response);
+
+        if (!response.ok) {
+          throw new Error(`Failed to insert user: ${response.status}`);
+        }
+
         navigate("/home");
       } else {
         alert("Sign in failed after confirmation.");
