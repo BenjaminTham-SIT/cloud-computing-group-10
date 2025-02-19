@@ -16,6 +16,7 @@
     "@testing-library/user-event": "^13.5.0",
     "amazon-cognito-identity-js": "^6.3.12",
     "aws-amplify": "^6.13.0",
+    "date-fns": "^4.1.0",
     "oidc-client-ts": "^3.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

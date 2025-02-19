@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useParams, Link } from "react-router-dom";
+import { format } from 'date-fns';
 import {
   Container,
   Typography,
@@ -77,16 +78,16 @@ const TopicPage = () => {
     const userID = tokenPayload.sub;
 
     const postData = {
-      user_id: "0",
+      user_id: userID,
       topic_id: topicId,
       name: newPost.name,
       content: newPost.content
     };
 
-    console.log(userID)
-    console.log(topicId)
-    console.log(newPost.name)
-    console.log(newPost.content)
+    console.log(postData)
+    // console.log(topicId)
+    // console.log(newPost.name)
+    // console.log(newPost.content)
 
 
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newPost", {
@@ -138,19 +139,30 @@ const TopicPage = () => {
           </Typography>
 
           <List sx={{ mb: 4 }}>
-            {posts.map((post) => (
-              <Paper key={post.post_id} sx={{ mb: 2 }}>
-                <ListItem
-                  button
-                  component={Link}
-                  to={`/post/${post.post_id}`}
-                  state={{ postTitle: post.name, postContent: post.content }}
-                >
-                  <ListItemText primary={post.name} secondary={post.content} />
-                </ListItem>
-              </Paper>
-            ))}
+            {posts.map((post) => {
+              // Convert the created_at timestamp into a readable format
+              const formattedDate = post.created_at
+                ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
+                : "Unknown Date";
+
+              return (
+                <Paper key={post.post_id} sx={{ mb: 2, p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {post.username} • {formattedDate}
+                  </Typography>
+                  <ListItem
+                    button
+                    component={Link}
+                    to={`/post/${post.post_id}`}
+                    state={{ postTitle: post.name, postContent: post.content }}
+                  >
+                    <ListItemText primary={post.name} secondary={post.content} />
+                  </ListItem>
+                </Paper>
+              );
+            })}
           </List>
+
 
           <Typography variant="h5" gutterBottom>
             Create a New Post
