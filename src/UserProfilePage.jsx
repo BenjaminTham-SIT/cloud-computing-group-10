@@ -42,9 +42,6 @@ const UserProfilePage = () => {
           <Typography variant="body1">
             <strong>Email:</strong> {profile.email || "N/A"}
           </Typography>
-          <Typography variant="body1">
-            <strong>User ID:</strong> {profile.sub || "N/A"}
-          </Typography>
         </Box>
         <Box sx={{ mt: 4, textAlign: "center" }}>
           <Button variant="contained" onClick={() => navigate("/home")}>
