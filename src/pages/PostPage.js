@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { format } from "date-fns"
 import { useParams, useLocation } from "react-router-dom";
 import {
   Container,
@@ -256,31 +257,44 @@ const PostPage = () => {
             Comments
           </Typography>
           <List sx={{ mb: 3 }}>
-            {comments.map((comment) => (
-              <Paper key={comment.id} sx={{ mb: 2, p: 2 }}>
-                <ListItem disablePadding>
-                  <ListItemText primary={comment.content} />
-                </ListItem>
-                {/* <Box sx={{ mt: 1 }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => handleCommentEdit(comment.id, comment.content)}
-                    sx={{ mr: 1 }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    size="small"
-                    onClick={() => handleCommentDelete(comment.id)}
-                  >
-                    Delete
-                  </Button>
-                </Box> */}
-              </Paper>
-            ))}
+            {comments.map((comment) => {
+              // Format the timestamp to a readable format (12-hour with AM/PM)
+              const formattedDate = comment.created_at
+                ? format(new Date(comment.created_at), "dd MMM yyyy, h:mm a") // 12-hour format
+                : "Unknown Date";
+
+              return (
+                <Paper key={comment.id} sx={{ mb: 2, p: 2 }}>
+                  {/* Display Username and Formatted Timestamp */}
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {comment.username} • {formattedDate}
+                  </Typography>
+
+                  {/* Comment Content */}
+                  <ListItem disablePadding>
+                    <ListItemText primary={comment.content} />
+                  </ListItem>
+                  {/* <Box sx={{ mt: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleCommentEdit(comment.id, comment.content)}
+                      sx={{ mr: 1 }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleCommentDelete(comment.id)}
+                    >
+                      Delete
+                    </Button>
+                  </Box> */}
+                </Paper>
+              );
+            })}
           </List>
 
           <Typography variant="h6" gutterBottom>
