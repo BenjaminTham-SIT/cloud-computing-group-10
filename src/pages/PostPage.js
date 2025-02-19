@@ -26,6 +26,7 @@ const PostPage = () => {
   const [imageURL, setImageURL] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loggedInUserId, setLoggedInUserId] = useState(null);
 
   // On mount, fetch comments for this post
   useEffect(() => {
@@ -38,6 +39,10 @@ const PostPage = () => {
       setIsLoading(false);
       return;
     }
+
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+    const userID = tokenPayload.sub;
+    setLoggedInUserId(userID);
 
     fetch(
       `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
@@ -82,6 +87,7 @@ const PostPage = () => {
       comment_id: commentId,
       content: updatedContent
     };
+    console.log(payload);
 
     fetch(
       "https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/updateComment",
@@ -94,15 +100,38 @@ const PostPage = () => {
         body: JSON.stringify(payload)
       }
     )
-      .then((response) => response.json())
-      .then((updatedComment) => {
-        setComments((prev) =>
-          prev.map((comment) =>
-            comment.id === commentId ? updatedComment : comment
-          )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(() => {
+        // re-fetch comments after posting
+        return fetch(
+          `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       })
+      .then((res) => res.json())
+      .then((data) => {
+        const parsedData = data.body ? JSON.parse(data.body) : data;
+        let allComments = [];
+        if (Array.isArray(parsedData.comments)) {
+          allComments = parsedData.comments;
+        } else if (Array.isArray(parsedData.data)) {
+          allComments = parsedData.data;
+        }
+        const filtered = allComments.filter(
+          (comment) => comment.post_id === parseInt(postId, 10)
+        );
+        setComments(filtered);
+        setNewComment("");
+      })
       .catch((error) => console.error("Error updating comment:", error));
+    
+    
+    
   };
 
   // Deleting a comment
@@ -274,25 +303,32 @@ const PostPage = () => {
                   <ListItem disablePadding>
                     <ListItemText primary={comment.content} />
                   </ListItem>
-                  {/* <Box sx={{ mt: 1 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleCommentEdit(comment.id, comment.content)}
-                      sx={{ mr: 1 }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      onClick={() => handleCommentDelete(comment.id)}
-                    >
-                      Delete
-                    </Button>
-                  </Box> */}
+
+                  {/* Show Edit and Delete buttons only if the comment belongs to the logged-in user */}
+                  {comment.user_id === loggedInUserId && (
+                    <Box sx={{ mt: 1 }}>
+                      {/* Edit Button */}
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleCommentEdit(comment.comment_id, comment.content)}
+                        sx={{ mr: 1 }}
+                      >
+                        Edit
+                      </Button>
+                      {/* Delete Button */}
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={() => handleCommentDelete(comment.id)}
+                      >
+                        Delete
+                      </Button>
+                    </Box>
+                  )}
                 </Paper>
+
               );
             })}
           </List>
