@@ -1,6 +1,8 @@
 import mysql from 'mysql2/promise';
 
 export const handler = async (event) => {
+    console.log('Event Body:', event.body);
+
   const dbConfig = {
     host: 'forum-database.ci6qmqse2nc9.us-east-1.rds.amazonaws.com', 
     user: 'admin',
@@ -12,7 +14,8 @@ export const handler = async (event) => {
 
   try {
     // Parse the JSON request body
-    const requestBody = JSON.parse(event.body || '{}');
+    // const requestBody = JSON.parse(event.body || '{}');
+    const requestBody = event;
 
     // Extract name and description from request
     const { name, description } = requestBody;
