@@ -20,15 +20,19 @@ function HomePage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Function to fetch topics from API
   const fetchTopics = () => {
     const token = sessionStorage.getItem("idToken");
-    console.log(token);
+
     if (!token) {
       setErrorMessage("You must be logged in to view topics.");
       return;
     }
+    
+    // console.log(tokenPayload["cognito:groups"]);
+
     setIsLoading(true);
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics", {
       headers: { Authorization: `Bearer ${token}` }
@@ -61,6 +65,14 @@ function HomePage() {
   // Initial fetch of topics
   useEffect(() => {
     fetchTopics();
+    const token = sessionStorage.getItem("idToken");
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+
+    const isUserAdmin = tokenPayload["cognito:groups"]?.includes("forum-admin") || false;
+
+    console.log("Is Admin:", isUserAdmin);
+    setIsAdmin(isUserAdmin);
+    // console.log(isAdmin);
   }, []);
 
   const handleInputChange = (e) => {
@@ -154,33 +166,37 @@ function HomePage() {
             </Typography>
           )}
 
-          {/* Form to create a new topic */}
-          <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
-            Create a New Topic
-          </Typography>
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{ display: "flex", gap: 2, flexDirection: "column", maxWidth: "400px" }}
-          >
-            <TextField
-              label="Topic Name"
-              name="name"
-              value={newTopic.name}
-              onChange={handleInputChange}
-              required
-            />
-            <TextField
-              label="Description"
-              name="description"
-              value={newTopic.description}
-              onChange={handleInputChange}
-              required
-            />
-            <Button variant="contained" type="submit">
-              Create Topic
-            </Button>
-          </Box>
+{isAdmin && (
+  <>
+    <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
+      Create a New Topic
+    </Typography>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{ display: "flex", gap: 2, flexDirection: "column", maxWidth: "400px" }}
+    >
+      <TextField
+        label="Topic Name"
+        name="name"
+        value={newTopic.name}
+        onChange={handleInputChange}
+        required
+      />
+      <TextField
+        label="Description"
+        name="description"
+        value={newTopic.description}
+        onChange={handleInputChange}
+        required
+      />
+      <Button variant="contained" type="submit">
+        Create Topic
+      </Button>
+    </Box>
+  </>
+)}
+
         </>
       )}
     </Container>
