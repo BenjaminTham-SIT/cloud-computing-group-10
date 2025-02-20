@@ -23,9 +23,10 @@ const TopicPage = () => {
   const [newPost, setNewPost] = useState({ name: "", content: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [imageURLs, setImageURLs] = useState({}); 
+  const [imageURLs, setImageURLs] = useState([]); 
   const [filePreview, setFilePreview] = useState(null);
   const [getfileType, setfileType] = useState("");
+  const [getTest, setTest] = useState("");
 
   // Fetch posts for the given topic
   useEffect(() => {
@@ -51,7 +52,6 @@ const TopicPage = () => {
       })
       .then((data) => {
         const parsedData = data.body ? JSON.parse(data.body) : data;
-        console.log(parsedData)
         if (!Array.isArray(parsedData.data)) {
           console.error("Expected an array but got:", parsedData.data);
           return;
@@ -61,16 +61,42 @@ const TopicPage = () => {
         );
 
         // Iterate over each filtered post and call fetchImageFromS3 using post.post_id
+        // filtered.forEach((post) => {
+        //   fetchImageFromS3(post.post_id)
+        //     .then((imageData) => {
+
+        //       // Handle imageData here
+
+        //       // const parsedData = imageData.body ? JSON.parse(imageData.body) : imageData;
+        //       // console.log("AUGGHGHH PARSED DATA"+parsedData)
+        //       // setImageURLs(imageData);
+        //       setImageURLs((prevURLs) => ({
+        //         ...prevURLs,
+        //         [post.post_id]: `data:image/jpeg;base64,${imageData}`
+        //       }));
+        //     })
+        //     .catch((error) => {
+        //       console.error("Error fetching image for post", post.post_id, error);
+        //     });
+            
+        // });
+        
         filtered.forEach((post) => {
           fetchImageFromS3(post.post_id)
             .then((imageData) => {
-              console.log("Image data for post", post.post_id, imageData);
-              // Handle imageData here
+              if (imageData) {  // Only update if imageData is valid
+                setImageURLs((prevURLs) => ({
+                  ...prevURLs,
+                  [post.post_id]: `data:image/jpeg;base64,${imageData}`
+                }));
+              }
             })
             .catch((error) => {
               console.error("Error fetching image for post", post.post_id, error);
             });
         });
+        
+
 
         setPosts(filtered);
       })
@@ -181,44 +207,98 @@ const TopicPage = () => {
       .catch((error) => console.error("Error:", error));
   }
 
-  const fetchImageFromS3 = async (postID) => {
-    
-    const new_postID = topicId + "_" + postID
+  // const fetchImageFromS3 = async (postID) => {
+  //   const new_postID = topicId + "_" + postID;
+  //   try {
+  //     const response = await fetch(
+  //       "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ partial_name: new_postID })
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+  //     const data = await response.json();
+  //     console.log("Parsed response:", data);
+  //     // Process the base64 image, for example:
+  //     const base64Image = data.file_content;
+  //     // Update your state here if needed
+  //     setTest(base64Image);
+  //     return base64Image;
+  //   } catch (error) {
+  //     console.error("Error fetching image:", error);
+  //     return null;
+  //   }
+  // };
+  
+//   const fetchImageFromS3 = async (postID) => {
+//   const new_postID = topicId + "_" + postID;
+//   console.log("show me the id "+JSON.stringify(new_postID))
+//   try {
+//     const response = await fetch(
+//       "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
+//       {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ "partial_name": new_postID })
+//       }
+//     );
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
+//     const data = await response.json();
+//     // Parse the nested JSON string in the body
+//     const parsedData = data.body ? JSON.parse(data.body) : data;
+//     const base64Image = parsedData.file_content;
+//     return base64Image;
+//   } catch (error) {
+//     console.error("Error fetching image:", error);
+//     return null;
+//   }
+// };
 
-    try {
-      let response_data = "";
-      const response = await fetch(
-        "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
-      { method: "POST", body: JSON.stringify({ partial_name: new_postID }) })
-        .then((response) => response.json())
-        .then((data) => console.log("Success:", data))
-        .catch((error) => console.error("Error:", error));
-    
-      const data = await response.json();
-      console.log("Raw response body:", data); // Check if body exists
-      
-      try {
-          const responseBody = JSON.parse(data.body);
-          console.log("Parsed response:", responseBody);
-      
-          const base64Image = responseBody.file_content;
-          console.log("Base64 Image:", base64Image);
-          console.log("Message:", responseBody.message);
-      } catch (error) {
-          console.error("Error parsing JSON:", error);
+const fetchImageFromS3 = async (postID) => {
+  const new_postID = topicId + "_" + postID;
+  console.log("show me the id " + JSON.stringify(new_postID));
+  try {
+    const response = await fetch(
+      "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "partial_name": new_postID })
       }
-
-        
-      // return `data:image/jpeg;base64,${base64Image}`;
-      // const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-      // setImageURL(imageUrl);
-
-    } catch (error) {
-      // console.error("Error fetching image:", error);
+    );
+    
+    // If the response status indicates that no image was found, return null.
+    if (response.status === 404) {
       return null;
     }
-  };
-  
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const parsedData = data.body ? JSON.parse(data.body) : data;
+    const base64Image = parsedData.file_content;
+    
+    // Check if the returned file content is valid.
+    if (!base64Image) {
+      return null;
+    }
+    
+    return base64Image;
+  } catch (error) {
+    console.error("Error fetching image:", error);
+    return null;
+  }
+};
+
+
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -240,21 +320,19 @@ const TopicPage = () => {
                 ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
                 : "Unknown Date";
               
-              fetchImageFromS3(post.post_id)
+              // fetchImageFromS3(post.post_id)
 
               return (
                 <Paper key={post.post_id} sx={{ mb: 2, p: 2 }}>
                   <Box sx={{ mt: 3 }}>
-                    {imageURLs[post.post_id] ? (
-                      <img
-                        src={imageURLs[post.post_id]}
-                        alt={`Image for post ${post.post_id}`}
-                        style={{ width: "300px" }}
-                      />
-                    ) : (
-                      ""
-                      // <Typography color="text.secondary">No Image Available</Typography>
-                    )}
+                  {imageURLs[post.post_id] && (
+  <img
+    src={imageURLs[post.post_id]}
+    alt={`Image for post ${post.post_id}`}
+    style={{ width: "300px" }}
+  />
+)}
+
                   </Box>
                   <Box
                     component="img"
@@ -322,7 +400,15 @@ const TopicPage = () => {
                 width="500px"
               />
             )}
-
+            <Box sx={{ mt: 3 }}>
+            {getTest ? (
+              <img src={getTest} alt="Fetched from S3" style={{ width: "300px" }} />
+            ) : (
+              <Button variant="outlined" onClick={fetchImageFromS3("21")}>
+                Fetch Image from S3
+              </Button>
+            )}
+          </Box>
             <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
               Upload Image/Video
               <input
