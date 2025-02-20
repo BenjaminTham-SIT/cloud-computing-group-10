@@ -26,8 +26,7 @@ const TopicPage = () => {
   const [imageURLs, setImageURLs] = useState([]); 
   const [filePreview, setFilePreview] = useState(null);
   const [getfileType, setfileType] = useState("");
-  const [uploadBtn, setUploadBtn] = useState(false);
-  const [imageData, setImageData] = useState(false);
+  const [getTest, setTest] = useState("");
 
   // Fetch posts for the given topic
   useEffect(() => {
@@ -109,30 +108,112 @@ const TopicPage = () => {
     setNewPost({ ...newPost, [e.target.name]: e.target.value });
   };
 
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+
+  //   const token = sessionStorage.getItem("idToken");
+  //   if (!token) {
+  //     console.error("No token found; user not logged in");
+  //     return;
+  //   }
+
+  //   // decode token to get user id
+  //   const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+  //   const userID = tokenPayload.sub;
+
+  //   const postData = {
+  //     user_id: userID,
+  //     topic_id: topicId,
+  //     name: newPost.name,
+  //     content: newPost.content
+  //   };
+
+  //   // console.log(topicId)
+  //   // console.log(newPost.name)
+  //   // console.log(newPost.content)
+
+  //   fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newPost", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${token}`
+  //     },
+  //     body: JSON.stringify(postData)
+  //   })
+  //     .then((response) => {
+  //       if (!response.ok) {
+  //         throw new Error(`HTTP error! status: ${response.status}`);
+  //       }
+  //       return response.json();
+  //     })
+
+  //     .then((postResponse) => {
+  //       console.log("New post response:", postResponse);
+  //       // Assume your API returns the new post id as postResponse.post_id
+  //       // const newPostId = postResponse.post_id;
+
+  //       const newPostId =
+  //       postResponse.postId ||
+  //       (postResponse.body && JSON.parse(postResponse.body).postId) ||
+  //       postResponse.post_id ||
+  //       (postResponse.body && JSON.parse(postResponse.body).post_id);
+
+
+
+  //       if (!newPostId) {
+  //         throw new Error("No post id returned from newPost API");
+  //       }
+
+  //       // Now call storeImageToS3 with the newPostId if a file was selected
+  //       if (selectedFile) {
+  //         storeImageToS3(newPostId);
+  //       } 
+  //       // re-fetch posts to show new one
+  //       return fetch(
+  //         `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`,
+  //         { headers: { Authorization: `Bearer ${token}` } }
+  //       );
+  //     })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       const parsedData = data.body ? JSON.parse(data.body) : data;
+  //       if (!Array.isArray(parsedData.data)) {
+  //         console.error("Expected an array but got:", parsedData.data);
+  //         return;
+  //       }
+  //       const filtered = parsedData.data.filter(
+  //         (post) => post.topic_id === parseInt(topicId, 10)
+  //       );
+  //       setPosts(filtered);
+  //     })
+  //     .then(() => {
+  //       // Store image only after the post has been successfully added
+  //       // storeImageToS3();
+  //     })
+  //     .catch((error) => console.error("Error after creating post:", error));
+  // };
+
+
   const handleSubmit = (e) => {
     e.preventDefault();
-
+  
     const token = sessionStorage.getItem("idToken");
     if (!token) {
       console.error("No token found; user not logged in");
       return;
     }
-
-    // decode token to get user id
+  
+    // Decode token to get user id
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const userID = tokenPayload.sub;
-
+  
     const postData = {
       user_id: userID,
       topic_id: topicId,
       name: newPost.name,
       content: newPost.content
     };
-
-    // console.log(topicId)
-    // console.log(newPost.name)
-    // console.log(newPost.content)
-
+  
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newPost", {
       method: "POST",
       headers: {
@@ -147,87 +228,148 @@ const TopicPage = () => {
         }
         return response.json();
       })
-      .then(() => {
-        // re-fetch posts to show new one
+      .then((postResponse) => {
+        console.log("New post response:", postResponse);
+        // Extract new post id (adjust keys based on your API response)
+        const newPostId =
+          postResponse.postId ||
+          (postResponse.body && JSON.parse(postResponse.body).postId) ||
+          postResponse.post_id ||
+          (postResponse.body && JSON.parse(postResponse.body).post_id);
+  
+        if (!newPostId) {
+          throw new Error("No post id returned from newPost API");
+        }
+  
+        // Chain the image upload (if a file is selected)
+        if (selectedFile) {
+          return storeImageToS3(newPostId).then(() => newPostId);
+        }
+        return newPostId;
+      })
+      .then((newPostId) => {
+        // Optionally, capture current scroll position to restore it after update
+        const currentScrollY = window.pageYOffset;
+        // Re-fetch posts after image upload is done
         return fetch(
           `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`,
           { headers: { Authorization: `Bearer ${token}` } }
-        );
-      })
-      .then((response) => response.json())
-      .then((data) => {
-        const parsedData = data.body ? JSON.parse(data.body) : data;
-        if (!Array.isArray(parsedData.data)) {
-          console.error("Expected an array but got:", parsedData.data);
-          return;
-        }
-        const filtered = parsedData.data.filter(
-          (post) => post.topic_id === parseInt(topicId, 10)
-        );
-        setPosts(filtered);
-      })
-      .then(() => {
-        // Store image only after the post has been successfully added
-        // storeImageToS3();
+        )
+          .then((response) => response.json())
+
+          .then((data) => {
+            const parsedData = data.body ? JSON.parse(data.body) : data;
+            if (!Array.isArray(parsedData.data)) {
+              console.error("Expected an array but got:", parsedData.data);
+              return;
+            }
+            const filtered = parsedData.data.filter(
+              (post) => post.topic_id === parseInt(topicId, 10)
+            );
+            // Update posts state
+            setPosts(filtered);
+            
+            // For each post, fetch its image and update imageURLs state
+            filtered.forEach((post) => {
+              fetchImageFromS3(post.post_id)
+                .then((imageData) => {
+                  if (imageData) {
+                    setImageURLs((prevURLs) => ({
+                      ...prevURLs,
+                      [post.post_id]: `data:image/jpeg;base64,${imageData}`
+                    }));
+                  }
+                })
+                .catch((error) => {
+                  console.error("Error fetching image for post", post.post_id, error);
+                });
+            });
+          })
+          
+
       })
       .catch((error) => console.error("Error after creating post:", error));
   };
+  
 
+  
   // Handling file upload
-  // let formData = new FormData();
-  // let testformdata = new FormData();
+  const formData = new FormData();
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
     setSelectedFile(file);
-    
+
     const reader = new FileReader();
-    
-    reader.onloadend = () => {  
-      if (!reader.result) {
-          console.error("Reader result is empty!");
-          return;
-      }
-  
-      const base64Data = reader.result.split(",")[1]; // Extract base64 content
-      // console.log("Base64 Data:", base64Data?.substring(0, 100));  // Print first 100 chars
-  
+    reader.onloadend = () => {
+      const fileContent = reader.result.split(",")[1];
       setFilePreview(reader.result);
+      
+      formData.append("content", fileContent);
       setfileType(file.type);
-  
-      setImageData(encodeURIComponent(base64Data));  // Properly encode the base64 string  
 
     };
-  
-    reader.readAsDataURL(file); // Triggers onloadend
-
-    setUploadBtn(true);
+    reader.readAsDataURL(file);
   };
-
   
-  const storeImageToS3 = () => {
-
-    const formData = new FormData();
-
+  // const storeImageToS3 = async (newPostId) => {
+  //   const fileExtension = getfileType.split('/').pop().toLowerCase();
+  //   const new_filename = `${topicId}_${newPostId}.${fileExtension}`;
+  
+  //   // Extract the base64 content from the data URL (filePreview)
+  //   const base64Content = filePreview.split(",")[1];
+  
+  //   // Create a JSON payload with the required keys
+  //   const payload = {
+  //     content: base64Content,
+  //     file_name: new_filename
+  //   };
+  
+  //   alert("Image uploaded to S3 - " + new_filename);
+  
+  //   fetch(
+  //     "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/store-s3",
+  //     {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(payload)
+  //     }
+  //   )
+  //     .then((response) => response.json())
+  //     .then((data) => console.log("Success:", data))
+  //     .catch((error) => console.error("Error:", error));
+  // };
+  
+  
+  const storeImageToS3 = (newPostId) => {
     const fileExtension = getfileType.split('/').pop().toLowerCase();
-    const new_filename = topicId + "." + fileExtension;
-    formData.append("content", imageData);
-    formData.append("file_name", new_filename);
-
-    formData.forEach((value, key) => {
-      console.log(`${key}:`, value);
-    });
-    
-    // Call API to store image added into the comment
-    fetch(
+    const new_filename = `${topicId}_${newPostId}.${fileExtension}`;
+    const base64Content = filePreview.split(",")[1];
+    const payload = {
+      content: base64Content,
+      file_name: new_filename
+    };
+  
+    // alert("Image uploaded to S3 - " + new_filename);
+  
+    return fetch(
       "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/store-s3",
-      { method: "POST", body: formData }
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
     )
       .then((response) => response.json())
-      .then((data) => console.log("Success:", data))
-      .catch((error) => console.error("Error:", error));
-  }
+      .then((data) => {
+        console.log("Success:", data);
+        return data;
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        throw error;
+      });
+  };
+  
 
   // const fetchImageFromS3 = async (postID) => {
   //   const new_postID = topicId + "_" + postID;
@@ -336,45 +478,44 @@ const fetchImageFromS3 = async (postID) => {
           </Typography>
 
           <List sx={{ mb: 4 }}>
-            {posts.map((post) => {
-              // Convert the created_at timestamp into a readable format
-              const formattedDate = post.created_at
-                ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
-                : "Unknown Date";
-              
-              // fetchImageFromS3(post.post_id)
 
-              return (
-                <Paper key={post.post_id} sx={{ mb: 2, p: 2 }}>
-                  <Box sx={{ mt: 3 }}>
-                  {imageURLs[post.post_id] && (
-  <img
-    src={imageURLs[post.post_id]}
-    alt={`Image for post ${post.post_id}`}
-    style={{ width: "300px" }}
-  />
-)}
 
-                  </Box>
-                  <Box
-                    component="img"
-                    src={filePreview}
-                    width="300px"
-                  />
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {post.username} • {formattedDate}
-                  </Typography>
-                  <ListItem
-                    button
-                    component={Link}
-                    to={`/post/${post.post_id}`}
-                    state={{ postTitle: post.name, postContent: post.content }}
-                  >
-                    <ListItemText primary={post.name} secondary={post.content} />
-                  </ListItem>
-                </Paper>
-              );
-            })}
+          {posts.map((post) => {
+  // Convert the created_at timestamp into a readable format
+  const formattedDate = post.created_at
+    ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
+    : "Unknown Date";
+
+  return (
+    <Paper key={post.post_id} sx={{ mb: 2, p: 2 }}>
+      <Box sx={{ mt: 3 }}>
+        {imageURLs[post.post_id] && (
+          <img
+            src={imageURLs[post.post_id]}
+            alt={`Image for post ${post.post_id}`}
+            style={{ width: "300px" }}
+          />
+        )}
+      </Box>
+      {/* Removed the filePreview rendering here */}
+      <Typography variant="subtitle2" color="text.secondary">
+        {post.username} • {formattedDate}
+      </Typography>
+      <ListItem
+        button
+        component={Link}
+        to={`/post/${post.post_id}`}
+        state={{ postTitle: post.name, postContent: post.content }}
+      >
+        <ListItemText primary={post.name} secondary={post.content} />
+      </ListItem>
+    </Paper>
+  );
+})}
+
+
+
+
           </List>
 
 
@@ -422,6 +563,16 @@ const fetchImageFromS3 = async (postID) => {
                 width="500px"
               />
             )}
+            <Box sx={{ mt: 3 }}>
+            {getTest ? (
+              <img src={getTest} alt="Fetched from S3" style={{ width: "300px" }} />
+            ) : (
+<Button variant="outlined" onClick={() => fetchImageFromS3("21")}>
+  Fetch Image from S3
+</Button>
+
+            )}
+          </Box>
             <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
               Upload Image/Video
               <input
@@ -443,16 +594,7 @@ const fetchImageFromS3 = async (postID) => {
             <Button variant="contained" type="submit">
               Create Post
             </Button>
-            {uploadBtn ? (
-                <Box sx={{ mt: 3 }}>
-                    <Button
-                        variant="outlined"
-                        onClick={() => storeImageToS3()} // Pass formData directly to the function
-                    >
-                        Test store image
-                    </Button>
-                </Box>
-            ) : null}
+
             
           </Box>
         </>
