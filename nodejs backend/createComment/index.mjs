@@ -13,50 +13,50 @@ export const handler = async (event) => {
   try {
     connection = await mysql.createConnection(dbConfig);
 
-    // Ensure the body is correctly parsed
-    let body;
-    if (event.body) {
-      try {
-        body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
-      } catch (error) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: 'Invalid JSON format' }),
-        };
-      }
-    } else {
+    const requestBody = event;
+
+    // Extract required fields
+    const { comment_id, user_id, content } = requestBody;
+
+    if (!comment_id || !user_id || !content) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Request body is missing' }),
+        body: JSON.stringify({ error: 'Missing required fields: comment_id, user_id, content' }),
       };
     }
 
-    // Extract and validate required fields
-    const { user_id, post_id, content } = body;
+    // Step 1: Check if the comment exists and belongs to the user
+    const [rows] = await connection.execute('SELECT user_id FROM comments WHERE comment_id = ?', [comment_id]);
 
-    if (!user_id || !post_id || !content) {
+    if (rows.length === 0) {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields: user_id, post_id, content' }),
+        statusCode: 404,
+        body: JSON.stringify({ error: 'Comment not found' }),
       };
     }
 
-    // INSERT query
-    const query = 'INSERT INTO comments (user_id, post_id, content, created_at) VALUES (?, ?, ?, NOW())';
-    const values = [user_id, post_id, content];
+    if (rows[0].user_id !== user_id) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Unauthorized: You can only edit your own comments' }),
+      };
+    }
 
-    // Execute query
-    const [result] = await connection.execute(query, values);
+    // Step 2: Perform the update
+    const [result] = await connection.execute(
+      'UPDATE comments SET content = ? WHERE comment_id = ?',
+      [content, comment_id]
+    );
 
     return {
-      statusCode: 201,
-      body: JSON.stringify({ message: 'Comment added successfully', commentId: result.insertId }),
+      statusCode: 200,
+      body: JSON.stringify({ message: 'Comment updated successfully' }),
     };
   } catch (error) {
-    console.error('Database insertion error:', error);
+    console.error('Database update error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to insert comment', details: error.message }),
+      body: JSON.stringify({ error: 'Failed to update comment', details: error.message }),
     };
   } finally {
     if (connection) {
