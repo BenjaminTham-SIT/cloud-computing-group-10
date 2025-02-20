@@ -26,6 +26,7 @@ const TopicPage = () => {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState({ name: "", content: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("newest"); // "newest" or "oldest"
@@ -91,9 +92,11 @@ const TopicPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const token = sessionStorage.getItem("idToken");
     if (!token) {
       console.error("No token found; user not logged in");
+      setIsSubmitting(false);
       return;
     }
     // Decode token to get user id
@@ -176,7 +179,8 @@ const TopicPage = () => {
             });
         });
       })
-      .catch((error) => console.error("Error after creating post:", error));
+      .catch((error) => console.error("Error after creating post:", error))
+      .finally(() => setIsSubmitting(false));
   };
 
   // Handling file upload
@@ -405,8 +409,8 @@ const TopicPage = () => {
                     width="300px"
                   />
                 )}
-                <Button variant="contained" type="submit">
-                  Submit
+                <Button variant="contained" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? <CircularProgress size={24} /> : "Submit"}
                 </Button>
               </Box>
             </Box>
