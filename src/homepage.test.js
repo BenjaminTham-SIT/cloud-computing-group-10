@@ -3,24 +3,25 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import HomePage from "./pages/HomePage";
 
 beforeAll(() => {
-    const mockSessionStorage = (() => {
-      let store = {};
-      return {
-        getItem: (key) => store[key] || null,
-        setItem: (key, value) => (store[key] = value.toString()),
-        removeItem: (key) => delete store[key],
-        clear: () => (store = {}),
-      };
-    })();
-  
-    Object.defineProperty(window, "sessionStorage", {
-      value: mockSessionStorage,
-    });
+  const mockSessionStorage = (() => {
+    let store = {};
+    return {
+      getItem: (key) => store[key] || null,
+      setItem: (key, value) => (store[key] = value.toString()),
+      removeItem: (key) => delete store[key],
+      clear: () => (store = {}),
+    };
+  })();
+
+  Object.defineProperty(window, "sessionStorage", {
+    value: mockSessionStorage,
   });
-  
-  beforeEach(() => {
-    sessionStorage.setItem("idToken", "mocked-token");
-  });
+});
+
+beforeEach(() => {
+  // For HomePage, a token string is sufficient if it’s only checking for its existence.
+  sessionStorage.setItem("idToken", "mocked-token");
+});
 
 describe("HomePage Component", () => {
   test("renders Forum Topics heading", () => {
