@@ -22,11 +22,15 @@ const TopicPage = () => {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState({ name: "", content: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imageURLs, setImageURLs] = useState({}); 
+  const [filePreview, setFilePreview] = useState(null);
+  const [getfileType, setfileType] = useState("");
 
   // Fetch posts for the given topic
   useEffect(() => {
+
     setIsLoading(true);
-    console.log(topicId)
 
     const token = sessionStorage.getItem("idToken");
     if (!token) {
@@ -47,6 +51,7 @@ const TopicPage = () => {
       })
       .then((data) => {
         const parsedData = data.body ? JSON.parse(data.body) : data;
+        console.log(parsedData)
         if (!Array.isArray(parsedData.data)) {
           console.error("Expected an array but got:", parsedData.data);
           return;
@@ -54,6 +59,19 @@ const TopicPage = () => {
         const filtered = parsedData.data.filter(
           (post) => post.topic_id === parseInt(topicId, 10)
         );
+
+        // Iterate over each filtered post and call fetchImageFromS3 using post.post_id
+        filtered.forEach((post) => {
+          fetchImageFromS3(post.post_id)
+            .then((imageData) => {
+              console.log("Image data for post", post.post_id, imageData);
+              // Handle imageData here
+            })
+            .catch((error) => {
+              console.error("Error fetching image for post", post.post_id, error);
+            });
+        });
+
         setPosts(filtered);
       })
       .catch((error) => console.error("Error fetching posts:", error))
@@ -84,11 +102,9 @@ const TopicPage = () => {
       content: newPost.content
     };
 
-    console.log(postData)
     // console.log(topicId)
     // console.log(newPost.name)
     // console.log(newPost.content)
-
 
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newPost", {
       method: "POST",
@@ -123,11 +139,90 @@ const TopicPage = () => {
         );
         setPosts(filtered);
       })
+      .then(() => {
+        // Store image only after the post has been successfully added
+        // storeImageToS3();
+      })
       .catch((error) => console.error("Error after creating post:", error));
   };
 
+  // Handling file upload
+  const formData = new FormData();
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    setSelectedFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const fileContent = reader.result.split(",")[1];
+      setFilePreview(reader.result);
+      
+      formData.append("content", fileContent);
+      setfileType(file.type);
+
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  const storeImageToS3 = async () => {
+    const fileExtension = getfileType.split('/').pop().toLowerCase();
+    const new_filename = topicId + "." + fileExtension;
+    formData.append("file_name", new_filename);
+
+    alert("Image uploaded to S3 - " + new_filename)
+
+    // Call API to store image added into the comment
+    fetch(
+      "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/store-s3",
+      { method: "POST", body: formData }
+    )
+      .then((response) => response.json())
+      .then((data) => console.log("Success:", data))
+      .catch((error) => console.error("Error:", error));
+  }
+
+  const fetchImageFromS3 = async (postID) => {
+    
+    const new_postID = topicId + "_" + postID
+
+    try {
+      let response_data = "";
+      const response = await fetch(
+        "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
+      { method: "POST", body: JSON.stringify({ partial_name: new_postID }) })
+        .then((response) => response.json())
+        .then((data) => console.log("Success:", data))
+        .catch((error) => console.error("Error:", error));
+    
+      const data = await response.json();
+      console.log("Raw response body:", data); // Check if body exists
+      
+      try {
+          const responseBody = JSON.parse(data.body);
+          console.log("Parsed response:", responseBody);
+      
+          const base64Image = responseBody.file_content;
+          console.log("Base64 Image:", base64Image);
+          console.log("Message:", responseBody.message);
+      } catch (error) {
+          console.error("Error parsing JSON:", error);
+      }
+
+        
+      // return `data:image/jpeg;base64,${base64Image}`;
+      // const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+      // setImageURL(imageUrl);
+
+    } catch (error) {
+      // console.error("Error fetching image:", error);
+      return null;
+    }
+  };
+  
+
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
+
       {isLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
           <CircularProgress />
@@ -144,9 +239,28 @@ const TopicPage = () => {
               const formattedDate = post.created_at
                 ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
                 : "Unknown Date";
+              
+              fetchImageFromS3(post.post_id)
 
               return (
                 <Paper key={post.post_id} sx={{ mb: 2, p: 2 }}>
+                  <Box sx={{ mt: 3 }}>
+                    {imageURLs[post.post_id] ? (
+                      <img
+                        src={imageURLs[post.post_id]}
+                        alt={`Image for post ${post.post_id}`}
+                        style={{ width: "300px" }}
+                      />
+                    ) : (
+                      ""
+                      // <Typography color="text.secondary">No Image Available</Typography>
+                    )}
+                  </Box>
+                  <Box
+                    component="img"
+                    src={filePreview}
+                    width="300px"
+                  />
                   <Typography variant="subtitle2" color="text.secondary">
                     {post.username} • {formattedDate}
                   </Typography>
@@ -167,6 +281,7 @@ const TopicPage = () => {
           <Typography variant="h5" gutterBottom>
             Create a New Post
           </Typography>
+          
           <Box
             component="form"
             onSubmit={handleSubmit}
@@ -179,6 +294,44 @@ const TopicPage = () => {
               onChange={handleInputChange}
               required
             />
+            
+            {filePreview && selectedFile ? (
+              <>
+                {selectedFile.type.startsWith("image/") ? (
+                  <Box
+                    component="img"
+                    src={filePreview}
+                    alt="Selected Preview"
+                    width="300px"
+                  />
+                ) : selectedFile.type.startsWith("video/") ? (
+                  <video width="300" controls>
+                    <source src={filePreview} type={selectedFile.type} />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <Typography color="text.secondary">Unsupported file type</Typography>
+                )}
+              </>
+            ) : (
+              // Display default image when no file is selected
+              <Box
+                component="img"
+                src="/poc.png"
+                alt="Default Preview"
+                width="500px"
+              />
+            )}
+
+            <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
+              Upload Image/Video
+              <input
+                type="file"
+                accept="image/*, video/*"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Button>
             <TextField
               label="Content"
               name="content"
@@ -191,11 +344,14 @@ const TopicPage = () => {
             <Button variant="contained" type="submit">
               Create Post
             </Button>
+
+            
           </Box>
         </>
       )}
     </Container>
   );
 };
+
 
 export default TopicPage;

@@ -193,49 +193,6 @@ const PostPage = () => {
       .catch((error) => console.error("Error deleting comment:", error));
   };
 
-  // Handling file upload
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    setSelectedFile(file);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const fileContent = reader.result.split(",")[1];
-      setFilePreview(reader.result);
-
-      const formData = new FormData();
-      formData.append("content", fileContent);
-      formData.append("file_name", file.name);
-
-      fetch(
-        "https://pwsgthrir2.execute-api.us-east-1.amazonaws.com/test-stage/upload-data-s3",
-        { method: "POST", body: formData }
-      )
-        .then((response) => response.json())
-        .then((data) => console.log("Success:", data))
-        .catch((error) => console.error("Error:", error));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const fetchImageFromS3 = async () => {
-    try {
-      const response = await fetch(
-        "https://pwsgthrir2.execute-api.us-east-1.amazonaws.com/test-stage/retrieve-data-s3"
-      );
-      if (!response.ok) {
-        alert("Failed to fetch image from S3");
-        return;
-      }
-      const data = await response.json();
-      const responseBody = JSON.parse(data.body);
-      const base64Image = responseBody.file_content;
-      const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-      setImageURL(imageUrl);
-    } catch (error) {
-      console.error("Error fetching image:", error);
-    }
-  };
 
   // Submitting a new comment
   const handleNewCommentSubmit = (e) => {
@@ -367,35 +324,6 @@ const PostPage = () => {
             onSubmit={handleNewCommentSubmit}
             sx={{ display: "flex", flexDirection: "column", gap: 2 }}
           >
-            {filePreview && (
-              <>
-                {selectedFile?.type.startsWith("image/") ? (
-                  <Box
-                    component="img"
-                    src={filePreview}
-                    alt="Selected Preview"
-                    width="300px"
-                  />
-                ) : selectedFile?.type.startsWith("video/") ? (
-                  <video width="300" controls>
-                    <source src={filePreview} type={selectedFile.type} />
-                    Your browser does not support the video tag.
-                  </video>
-                ) : (
-                  <Typography color="text.secondary">Unsupported file type</Typography>
-                )}
-              </>
-            )}
-
-            <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
-              Upload Image/Video
-              <input
-                type="file"
-                accept="image/*, video/*"
-                hidden
-                onChange={handleFileChange}
-              />
-            </Button>
 
             <TextField
               label="Your comment"
@@ -411,15 +339,6 @@ const PostPage = () => {
             </Button>
           </Box>
 
-          <Box sx={{ mt: 3 }}>
-            {imageURL ? (
-              <img src={imageURL} alt="Fetched from S3" style={{ width: "300px" }} />
-            ) : (
-              <Button variant="outlined" onClick={fetchImageFromS3}>
-                Fetch Image from S3
-              </Button>
-            )}
-          </Box>
         </>
       )}
     </Container>
