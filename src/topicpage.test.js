@@ -20,11 +20,42 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  // Set a valid fake JWT (with three dot-separated parts)
   const fakeToken =
-    "eyJzdWIiOiJiOTNlMzQ2OC1jMGMxLTcwZTQtOTM5ZC1iOTUyNWRhMTY0ZmIiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmFwLXNvdXRoZWFzdC0yLmFtYXpvbmF3cy5jb21cL2FwLXNvdXRoZWFzdC0yX3I0TFljeWtIVyIsImNvZ25pdG86dXNlcm5hbWUiOiJiZW4yIiwib3JpZ2luX2p0aSI6IjhiNTA4NDU0LTNkNDItNGFjNC1iM2E0LTk1MDNmMTdjMDFkYSIsImF1ZCI6IjFhYjdwM3U2N2VncjJiZmNtNTk4MDZuaG1sIiwiZXZlbnRfaWQiOiIxZGQ5ZWE0MS02YTU1LTQzZjAtOGM4Mi0wN2RjYjVlNGYxN2MiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTc0MDA0NzExNCwiZXhwIjoxNzQwMDUwNzE0LCJpYXQiOjE3NDAwNDcxMTQsImp0aSI6IjBlMTM2NDgyLTYwMzgtNGI3Yi05ZjI4LWRlYjNhZjIzYTRkZiIsImVtYWlsIjoiYmVuamFtaW4udGhhbXl1YmluQGdtYWlsLmNvbSJ9.hn0qNFmzzTlGyyLFwSSmImms92ICuWHAPdsAS8M1k0SinxuotCiy5f-7HXv49qCxzF6h1aAsk2j3FSJCKZo98UDyVz52G986GxDNnGdRes_MX0okBHrbRRn7EAyfagBarYDjH6SggYecKQt74sYcNqc0osZLxt0-Lc-MqEV6KfVidIEoXGS3-QcBOtrOkltPGvsc6v8WvWzQImXyH6oWxSeZ89ZcAJCP5dLI_W7UeGTNHI09DaYSk1vLQjLPH9mZB8Lp4bfeG9Nhwtw7ICxRgUmeeLIryssEeJOdac_8rSs2n-CHb8AKcKMyRd7cL_9SfKKZlUSeMWYxlmpDNDSCxA" +
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
     btoa(JSON.stringify({ sub: "test-sub" })) +
     ".signature";
   sessionStorage.setItem("idToken", fakeToken);
+
+  // Mock fetch to simulate a successful API response for getPosts
+  global.fetch = jest.fn((url, options) => {
+    if (url.includes("/dev/getPosts")) {
+      // Extract topicId from the URL (if needed)
+      const topicId = new URL(url).searchParams.get("topicId");
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            body: JSON.stringify({
+              data: [
+                {
+                  post_id: 1,
+                  topic_id: parseInt(topicId, 10),
+                  name: "Test Post",
+                  content: "Test Content",
+                  created_at: "2020-01-01T00:00:00Z",
+                  username: "TestUser"
+                }
+              ]
+            }),
+          }),
+      });
+    }
+    // Optionally, handle other fetch calls (like newPost) if needed
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({}),
+    });
 });
 
 describe("TopicPage Component", () => {
@@ -34,7 +65,7 @@ describe("TopicPage Component", () => {
         <TopicPage />
       </MemoryRouter>
     );
-    // Wait for the spinner to disappear and the text to be rendered
+    // Wait for the component to finish loading and the topic title to be rendered.
     await waitFor(() => {
       expect(screen.getByText(/Unknown Topic/i)).toBeInTheDocument();
     });
@@ -57,7 +88,7 @@ describe("TopicPage Component", () => {
         <TopicPage />
       </MemoryRouter>
     );
-    // Wait for the form to be rendered
+    // Wait for the form to be rendered before finding the input.
     const input = await screen.findByLabelText(/Post Title/i);
     fireEvent.change(input, { target: { value: "New Test Post" } });
     expect(input.value).toBe("New Test Post");
