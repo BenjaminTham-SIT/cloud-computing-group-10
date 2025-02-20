@@ -11,6 +11,7 @@ beforeEach(() => {
 
 test("renders forum heading", () => {
   render(<App />);
-  const heading = screen.getByText(/Forum Topics/i);
+  // Update the matcher to the actual text in the header.
+  const heading = screen.getByText(/Joo's Amazing Forum/i);
   expect(heading).toBeInTheDocument();
 });
