@@ -13,7 +13,6 @@ beforeAll(() => {
       clear: () => (store = {}),
     };
   })();
-
   Object.defineProperty(window, "sessionStorage", {
     value: mockSessionStorage,
   });
@@ -30,7 +29,6 @@ beforeEach(() => {
   // Mock fetch to simulate a successful API response for getPosts
   global.fetch = jest.fn((url, options) => {
     if (url.includes("/dev/getPosts")) {
-      // Extract topicId from the URL (if needed)
       const topicId = new URL(url).searchParams.get("topicId");
       return Promise.resolve({
         ok: true,
@@ -44,24 +42,28 @@ beforeEach(() => {
                   name: "Test Post",
                   content: "Test Content",
                   created_at: "2020-01-01T00:00:00Z",
-                  username: "TestUser"
-                }
-              ]
+                  username: "TestUser",
+                },
+              ],
             }),
           }),
       });
     }
-    // Optionally, handle other fetch calls (like newPost) if needed
+    // Default mock for any other fetch calls
     return Promise.resolve({
       ok: true,
       json: () => Promise.resolve({}),
     });
+  });
 });
 
 describe("TopicPage Component", () => {
   test("renders topic title", async () => {
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter
+        initialEntries={["/topic/1"]}  // Provide a valid route so that useParams returns topicId "1"
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <TopicPage />
       </MemoryRouter>
     );
@@ -73,7 +75,10 @@ describe("TopicPage Component", () => {
 
   test("renders Create a New Post form", async () => {
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter
+        initialEntries={["/topic/1"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <TopicPage />
       </MemoryRouter>
     );
@@ -84,7 +89,10 @@ describe("TopicPage Component", () => {
 
   test("allows typing in post title input", async () => {
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter
+        initialEntries={["/topic/1"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <TopicPage />
       </MemoryRouter>
     );
