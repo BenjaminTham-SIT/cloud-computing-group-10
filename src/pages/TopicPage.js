@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useParams, Link } from "react-router-dom";
 import { format } from "date-fns";
-import { useParams, useLocation, Link } from "react-router-dom";
 import {
   Container,
   Typography,
-  Button,
   TextField,
-  Paper,
+  Button,
   List,
+  Paper,
   Box,
   CircularProgress,
   Fab,
@@ -28,6 +28,7 @@ const TopicPage = () => {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Fetch posts for the given topic
   useEffect(() => {
     setIsLoading(true);
     console.log("Topic ID:", topicId);
@@ -73,6 +74,7 @@ const TopicPage = () => {
       console.error("No token found; user not logged in");
       return;
     }
+    // Decode token to get user id
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const userID = tokenPayload.sub;
 
@@ -97,10 +99,10 @@ const TopicPage = () => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        console.log(response);
         return response.json();
       })
       .then(() => {
+        // Re-fetch posts after new post creation.
         return fetch(
           `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getPosts?topicId=${topicId}`,
           { headers: { Authorization: `Bearer ${token}` } }
@@ -122,112 +124,112 @@ const TopicPage = () => {
       .catch((error) => console.error("Error after creating post:", error));
   };
 
+  // Filter posts based on search term (by post name, case-insensitive)
   const filteredPosts = posts.filter((post) =>
     post.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, position: "relative", p: 3, bgcolor: "#121212", color: "#e0e0e0", borderRadius: 2 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontFamily: "Roboto Condensed, sans-serif" }}>
-        Posts for {topicName}
-      </Typography>
-
-      <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
-        <TextField
-          label="Search posts by title"
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          fullWidth
-          sx={{
-            bgcolor: "#1e1e1e",
-            input: { color: "#e0e0e0" },
-            fieldset: { borderColor: "#00ff99" }
-          }}
-        />
-      </Box>
-
-      <List sx={{ mb: 4 }}>
-        {filteredPosts.map((post) => {
-          const formattedDate = post.created_at
-            ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
-            : "Unknown Date";
-          return (
-            <Paper key={post.post_id} sx={{ mb: 2, p: 2, bgcolor: "#1e1e1e", border: "1px solid #00ff99" }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                {post.username} • {formattedDate}
-              </Typography>
-              <ListItem
-                button
-                component={Link}
-                to={`/post/${post.post_id}`}
-                state={{ postTitle: post.name, postContent: post.content }}
-              >
-                <ListItemText primary={post.name} secondary={post.content} sx={{ color: "#e0e0e0" }}/>
-              </ListItem>
-            </Paper>
-          );
-        })}
-      </List>
-
-      <Box sx={{ position: "fixed", bottom: 16, right: 16 }}>
-        {showCreatePost ? (
-          <Button variant="contained" color="secondary" onClick={() => setShowCreatePost(false)} startIcon={<CloseIcon />}>
-            Close
-          </Button>
-        ) : (
-          <Fab color="primary" onClick={() => setShowCreatePost(true)}>
-            <AddIcon />
-          </Fab>
-        )}
-      </Box>
-
-      {showCreatePost && (
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 80,
-            right: 16,
-            width: "300px",
-            p: 2,
-            bgcolor: "rgba(30,30,30,0.95)",
-            boxShadow: 10,
-            borderRadius: 2,
-            zIndex: 1000,
-            border: "2px solid #00ff99"
-          }}
-        >
-          <Typography variant="h6" gutterBottom sx={{ color: "#00ff99" }}>Create Post</Typography>
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField
-              label="Post Title"
-              name="name"
-              value={newPost.name}
-              onChange={handleInputChange}
-              required
-              sx={{
-                input: { color: "#e0e0e0" },
-                fieldset: { borderColor: "#00ff99" }
-              }}
-            />
-            <TextField
-              label="Content"
-              name="content"
-              value={newPost.content}
-              onChange={handleInputChange}
-              multiline
-              minRows={3}
-              required
-              sx={{
-                input: { color: "#e0e0e0" },
-                fieldset: { borderColor: "#00ff99" }
-              }}
-            />
-            <Button variant="contained" type="submit" sx={{ bgcolor: "#00ff99", color: "#121212" }}>
-              Submit
-            </Button>
-          </Box>
+    <Container maxWidth="md" sx={{ mt: 4, position: "relative" }}>
+      {isLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <CircularProgress />
         </Box>
+      ) : (
+        <>
+          <Typography variant="h4" gutterBottom>
+            Posts for {topicName}
+          </Typography>
+
+          {/* Search bar for posts */}
+          <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
+            <TextField
+              label="Search posts by title"
+              variant="outlined"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              fullWidth
+            />
+          </Box>
+
+          <List sx={{ mb: 4 }}>
+            {filteredPosts.map((post) => {
+              const formattedDate = post.created_at
+                ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
+                : "Unknown Date";
+              return (
+                <Paper key={post.post_id} sx={{ mb: 2, p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {post.username} • {formattedDate}
+                  </Typography>
+                  <ListItem
+                    button
+                    component={Link}
+                    to={`/post/${post.post_id}`}
+                    state={{ postTitle: post.name, postContent: post.content }}
+                  >
+                    <ListItemText primary={post.name} secondary={post.content} />
+                  </ListItem>
+                </Paper>
+              );
+            })}
+          </List>
+
+          {/* Floating action button for new post */}
+          <Box sx={{ position: "fixed", bottom: 16, right: 16 }}>
+            {showCreatePost ? (
+              <Button variant="contained" color="secondary" onClick={() => setShowCreatePost(false)} startIcon={<CloseIcon />}>
+                Close
+              </Button>
+            ) : (
+              <Fab color="primary" onClick={() => setShowCreatePost(true)}>
+                <AddIcon />
+              </Fab>
+            )}
+          </Box>
+
+          {/* Floating create post form */}
+          {showCreatePost && (
+            <Box
+              sx={{
+                position: "fixed",
+                bottom: 80,
+                right: 16,
+                width: "300px",
+                p: 2,
+                bgcolor: "background.paper",
+                boxShadow: 3,
+                borderRadius: 2,
+                zIndex: 1000
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Create Post
+              </Typography>
+              <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <TextField
+                  label="Post Title"
+                  name="name"
+                  value={newPost.name}
+                  onChange={handleInputChange}
+                  required
+                />
+                <TextField
+                  label="Content"
+                  name="content"
+                  value={newPost.content}
+                  onChange={handleInputChange}
+                  multiline
+                  minRows={3}
+                  required
+                />
+                <Button variant="contained" type="submit">
+                  Submit
+                </Button>
+              </Box>
+            </Box>
+          )}
+        </>
       )}
     </Container>
   );

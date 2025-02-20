@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { useParams, useLocation, Link } from "react-router-dom";
+import { format } from "date-fns"
+import { useParams, useLocation } from "react-router-dom";
 import {
   Container,
   Typography,
-  TextField,
   Button,
+  TextField,
   Paper,
   List,
   ListItem,
   ListItemText,
   Box,
-  CircularProgress,
-  Fab
+  CircularProgress
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
 
 const PostPage = () => {
   const { postId } = useParams();
@@ -25,28 +22,27 @@ const PostPage = () => {
 
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imageURL, setImageURL] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCreateComment, setShowCreateComment] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [loggedInUserId, setLoggedInUserId] = useState(null);
 
-  // Fetch comments on mount
+  // On mount, fetch comments for this post
   useEffect(() => {
     setIsLoading(true);
+
     const token = sessionStorage.getItem("idToken");
+    // If no token, you can decide to skip fetch or show a "please login" message
     if (!token) {
-      console.error("No token found; user is not logged in.");
+      console.error("No token in sessionStorage; user is not logged in?");
       setIsLoading(false);
       return;
     }
 
-    // Decode the token to extract the user ID
-    try {
-      const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-      setLoggedInUserId(tokenPayload.sub);
-    } catch (error) {
-      console.error("Failed to decode token:", error);
-    }
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+    const userID = tokenPayload.sub;
+    setLoggedInUserId(userID);
 
     fetch(
       `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
@@ -55,12 +51,13 @@ const PostPage = () => {
       .then((response) => response.json())
       .then((data) => {
         const parsedData = data.body ? JSON.parse(data.body) : data;
-        let allComments = Array.isArray(parsedData.comments)
-          ? parsedData.comments
-          : Array.isArray(parsedData.data)
-          ? parsedData.data
-          : [];
-        // Filter comments by this post
+        let allComments = [];
+        if (Array.isArray(parsedData.comments)) {
+          allComments = parsedData.comments;
+        } else if (Array.isArray(parsedData.data)) {
+          allComments = parsedData.data;
+        }
+        // Filter comments that match this post
         const filtered = allComments.filter(
           (comment) => comment.post_id === parseInt(postId, 10)
         );
@@ -70,18 +67,186 @@ const PostPage = () => {
       .finally(() => setIsLoading(false));
   }, [postId]);
 
-  const handleInputChange = (e) => {
-    setNewComment(e.target.value);
-  };
+  // Editing a comment
+  const handleCommentEdit = (commentId, currentContent) => {
+    const updatedContent = prompt("Edit your comment:", currentContent);
+    if (!updatedContent) return;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
     const token = sessionStorage.getItem("idToken");
     if (!token) {
-      console.error("No token found; user is not logged in.");
+      console.error("No token found; user not logged in");
       return;
     }
 
+    // You may decode to find user_id if your Lambda requires it
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+    const userID = tokenPayload.sub;
+
+    const payload = {
+      user_id: userID,
+      comment_id: commentId,
+      content: updatedContent
+    };
+    console.log(payload);
+
+    fetch(
+      "https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/updateComment",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      }
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(() => {
+        // re-fetch comments after posting
+        return fetch(
+          `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        const parsedData = data.body ? JSON.parse(data.body) : data;
+        let allComments = [];
+        if (Array.isArray(parsedData.comments)) {
+          allComments = parsedData.comments;
+        } else if (Array.isArray(parsedData.data)) {
+          allComments = parsedData.data;
+        }
+        const filtered = allComments.filter(
+          (comment) => comment.post_id === parseInt(postId, 10)
+        );
+        setComments(filtered);
+        setNewComment("");
+      })
+      .catch((error) => console.error("Error updating comment:", error));
+    
+    
+    
+  };
+
+  // Deleting a comment
+  const handleCommentDelete = (commentId) => {
+    const token = sessionStorage.getItem("idToken");
+    if (!token) {
+      console.error("No token found; user not logged in");
+      return;
+    }
+
+    // Optionally decode the token to get user_id if your Lambda needs it
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+    const userID = tokenPayload.sub;
+
+    const payload = {
+      user_id: userID,
+      comment_id: commentId
+    };
+
+    fetch(
+      "https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/deleteComment",
+      {
+        method: "DELETE",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+         },
+        body: JSON.stringify(payload)
+      }
+    )
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(() => {
+      // re-fetch comments after deleting
+      return fetch(
+        `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      const parsedData = data.body ? JSON.parse(data.body) : data;
+      let allComments = [];
+      if (Array.isArray(parsedData.comments)) {
+        allComments = parsedData.comments;
+      } else if (Array.isArray(parsedData.data)) {
+        allComments = parsedData.data;
+      }
+      const filtered = allComments.filter(
+        (comment) => comment.post_id === parseInt(postId, 10)
+      );
+      setComments(filtered);
+      setNewComment("");
+    })
+      .catch((error) => console.error("Error deleting comment:", error));
+  };
+
+  // Handling file upload
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    setSelectedFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const fileContent = reader.result.split(",")[1];
+      setFilePreview(reader.result);
+
+      const formData = new FormData();
+      formData.append("content", fileContent);
+      formData.append("file_name", file.name);
+
+      fetch(
+        "https://pwsgthrir2.execute-api.us-east-1.amazonaws.com/test-stage/upload-data-s3",
+        { method: "POST", body: formData }
+      )
+        .then((response) => response.json())
+        .then((data) => console.log("Success:", data))
+        .catch((error) => console.error("Error:", error));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const fetchImageFromS3 = async () => {
+    try {
+      const response = await fetch(
+        "https://pwsgthrir2.execute-api.us-east-1.amazonaws.com/test-stage/retrieve-data-s3"
+      );
+      if (!response.ok) {
+        alert("Failed to fetch image from S3");
+        return;
+      }
+      const data = await response.json();
+      const responseBody = JSON.parse(data.body);
+      const base64Image = responseBody.file_content;
+      const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+      setImageURL(imageUrl);
+    } catch (error) {
+      console.error("Error fetching image:", error);
+    }
+  };
+
+  // Submitting a new comment
+  const handleNewCommentSubmit = (e) => {
+    e.preventDefault();
+    const token = sessionStorage.getItem("idToken");
+    if (!token) {
+      console.error("No token found; user is not logged in");
+      return;
+    }
+
+    // Decode to get userID
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const userID = tokenPayload.sub;
 
@@ -91,22 +256,20 @@ const PostPage = () => {
       content: newComment
     };
 
-    fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newComment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
+    fetch(
+      "https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newComment",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      }
+    )
+      .then((response) => response.json())
       .then(() => {
-        // Re-fetch comments after posting
+        // re-fetch comments after posting
         return fetch(
           `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
           { headers: { Authorization: `Bearer ${token}` } }
@@ -115,151 +278,149 @@ const PostPage = () => {
       .then((res) => res.json())
       .then((data) => {
         const parsedData = data.body ? JSON.parse(data.body) : data;
-        let allComments = Array.isArray(parsedData.comments)
-          ? parsedData.comments
-          : Array.isArray(parsedData.data)
-          ? parsedData.data
-          : [];
+        let allComments = [];
+        if (Array.isArray(parsedData.comments)) {
+          allComments = parsedData.comments;
+        } else if (Array.isArray(parsedData.data)) {
+          allComments = parsedData.data;
+        }
         const filtered = allComments.filter(
           (comment) => comment.post_id === parseInt(postId, 10)
         );
         setComments(filtered);
         setNewComment("");
-        setShowCreateComment(false);
       })
       .catch((error) => console.error("Error adding comment:", error));
   };
 
-  // Filter comments by search term (case-insensitive)
-  const filteredComments = comments.filter((comment) =>
-    comment.content.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
-    <Container
-      maxWidth="md"
-      sx={{
-        mt: 4,
-        position: "relative",
-        p: 3,
-        bgcolor: "#121212",
-        color: "#e0e0e0",
-        borderRadius: 2
-      }}
-    >
-      <Typography variant="h4" gutterBottom sx={{ fontFamily: "Roboto Condensed, sans-serif" }}>
-        {postTitle}
-      </Typography>
-      <Typography variant="body1" sx={{ mb: 3 }}>
-        {postContent}
-      </Typography>
-
-      {/* Search bar for comments */}
-      <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
-        <TextField
-          label="Search comments"
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          fullWidth
-          sx={{
-            bgcolor: "#1e1e1e",
-            input: { color: "#e0e0e0" },
-            fieldset: { borderColor: "#00ff99" }
-          }}
-        />
-      </Box>
-
-      <Typography variant="h5" gutterBottom>
-        Comments
-      </Typography>
-
+    <Container maxWidth="md" sx={{ mt: 4 }}>
       {isLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-          <CircularProgress color="secondary" />
+          <CircularProgress />
         </Box>
       ) : (
-        <List sx={{ mb: 4 }}>
-          {filteredComments.map((comment) => {
-            const formattedDate = comment.created_at
-              ? format(new Date(comment.created_at), "dd MMM yyyy, h:mm a")
-              : "Unknown Date";
-            return (
-              <Paper
-                key={comment.id}
-                sx={{ mb: 2, p: 2, bgcolor: "#1e1e1e", border: "1px solid #00ff99" }}
-              >
-                <Typography variant="subtitle2" color="text.secondary">
-                  {comment.username} • {formattedDate}
-                </Typography>
-                <ListItem disablePadding>
-                  <ListItemText primary={comment.content} sx={{ color: "#e0e0e0" }} />
-                </ListItem>
-              </Paper>
-            );
-          })}
-        </List>
-      )}
+        <>
+          <Typography variant="h4" gutterBottom>
+            {postTitle}
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 3 }}>
+            {postContent}
+          </Typography>
 
-      {/* Floating FAB for toggling create comment form */}
-      <Box sx={{ position: "fixed", bottom: 16, right: 16 }}>
-        {showCreateComment ? (
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => setShowCreateComment(false)}
-            startIcon={<CloseIcon />}
-          >
-            Close
-          </Button>
-        ) : (
-          <Fab color="primary" onClick={() => setShowCreateComment(true)}>
-            <AddIcon />
-          </Fab>
-        )}
-      </Box>
+          <Typography variant="h5" gutterBottom>
+            Comments
+          </Typography>
+          <List sx={{ mb: 3 }}>
+            {comments.map((comment) => {
+              // Format the timestamp to a readable format (12-hour with AM/PM)
+              const formattedDate = comment.created_at
+                ? format(new Date(comment.created_at), "dd MMM yyyy, h:mm a") // 12-hour format
+                : "Unknown Date";
 
-      {/* Floating create comment form */}
-      {showCreateComment && (
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 80,
-            right: 16,
-            width: "300px",
-            p: 2,
-            bgcolor: "rgba(30,30,30,0.95)",
-            boxShadow: 10,
-            borderRadius: 2,
-            zIndex: 1000,
-            border: "2px solid #00ff99"
-          }}
-        >
-          <Typography variant="h6" gutterBottom sx={{ color: "#00ff99" }}>
-            Add Comment
+              return (
+                <Paper key={comment.id} sx={{ mb: 2, p: 2 }}>
+                  {/* Display Username and Formatted Timestamp */}
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {comment.username} • {formattedDate}
+                  </Typography>
+
+                  {/* Comment Content */}
+                  <ListItem disablePadding>
+                    <ListItemText primary={comment.content} />
+                  </ListItem>
+
+                  {/* Show Edit and Delete buttons only if the comment belongs to the logged-in user */}
+                  {comment.user_id === loggedInUserId && (
+                    <Box sx={{ mt: 1 }}>
+                      {/* Edit Button */}
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleCommentEdit(comment.comment_id, comment.content)}
+                        sx={{ mr: 1 }}
+                      >
+                        Edit
+                      </Button>
+                      {/* Delete Button */}
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={() => handleCommentDelete(comment.comment_id)}
+                      >
+                        Delete
+                      </Button>
+                    </Box>
+                  )}
+                </Paper>
+
+              );
+            })}
+          </List>
+
+          <Typography variant="h6" gutterBottom>
+            Add a Comment
           </Typography>
           <Box
             component="form"
-            onSubmit={handleSubmit}
+            onSubmit={handleNewCommentSubmit}
             sx={{ display: "flex", flexDirection: "column", gap: 2 }}
           >
+            {filePreview && (
+              <>
+                {selectedFile?.type.startsWith("image/") ? (
+                  <Box
+                    component="img"
+                    src={filePreview}
+                    alt="Selected Preview"
+                    width="300px"
+                  />
+                ) : selectedFile?.type.startsWith("video/") ? (
+                  <video width="300" controls>
+                    <source src={filePreview} type={selectedFile.type} />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <Typography color="text.secondary">Unsupported file type</Typography>
+                )}
+              </>
+            )}
+
+            <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
+              Upload Image/Video
+              <input
+                type="file"
+                accept="image/*, video/*"
+                hidden
+                onChange={handleFileChange}
+              />
+            </Button>
+
             <TextField
-              label="Comment"
-              value={newComment}
-              onChange={handleInputChange}
+              label="Your comment"
               multiline
               minRows={3}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
               required
-              sx={{
-                input: { color: "#e0e0e0" },
-                fieldset: { borderColor: "#00ff99" }
-              }}
             />
-            <Button variant="contained" type="submit" sx={{ bgcolor: "#00ff99", color: "#121212" }}>
-              Submit
+
+            <Button variant="contained" type="submit">
+              Post Comment
             </Button>
           </Box>
-        </Box>
+
+          <Box sx={{ mt: 3 }}>
+            {imageURL ? (
+              <img src={imageURL} alt="Fetched from S3" style={{ width: "300px" }} />
+            ) : (
+              <Button variant="outlined" onClick={fetchImageFromS3}>
+                Fetch Image from S3
+              </Button>
+            )}
+          </Box>
+        </>
       )}
     </Container>
   );
