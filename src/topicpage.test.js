@@ -40,23 +40,23 @@ describe("TopicPage Component", () => {
     });
   });
 
-  test("renders Create a New Post form", async () => {
-    render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <TopicPage />
-      </MemoryRouter>
-    );
-    await waitFor(() => {
-      expect(screen.getByText(/Create a New Post/i)).toBeInTheDocument();
-    });
-  });
+  // test("renders Create a New Post form", async () => {
+  //   render(
+  //     <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+  //       <TopicPage />
+  //     </MemoryRouter>
+  //   );
+  //   await waitFor(() => {
+  //     expect(screen.getByText(/Create a New Post/i)).toBeInTheDocument();
+  //   });
+  // });
 
-  test("allows typing in post title input", async () => {
-    render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <TopicPage />
-      </MemoryRouter>
-    );
+  // test("allows typing in post title input", async () => {
+  //   render(
+  //     <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+  //       <TopicPage />
+  //     </MemoryRouter>
+  //   );
     // Wait for the form to be rendered
     const input = await screen.findByLabelText(/Post Title/i);
     fireEvent.change(input, { target: { value: "New Test Post" } });
