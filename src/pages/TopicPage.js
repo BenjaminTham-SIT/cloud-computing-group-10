@@ -26,7 +26,8 @@ const TopicPage = () => {
   const [imageURLs, setImageURLs] = useState([]); 
   const [filePreview, setFilePreview] = useState(null);
   const [getfileType, setfileType] = useState("");
-  const [getTest, setTest] = useState("");
+  const [uploadBtn, setUploadBtn] = useState(false);
+  const [imageData, setImageData] = useState(false);
 
   // Fetch posts for the given topic
   useEffect(() => {
@@ -173,30 +174,51 @@ const TopicPage = () => {
   };
 
   // Handling file upload
-  const formData = new FormData();
+  // let formData = new FormData();
+  // let testformdata = new FormData();
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    setSelectedFile(file);
+    if (!file) return;
 
+    setSelectedFile(file);
+    
     const reader = new FileReader();
-    reader.onloadend = () => {
-      const fileContent = reader.result.split(",")[1];
+    
+    reader.onloadend = () => {  
+      if (!reader.result) {
+          console.error("Reader result is empty!");
+          return;
+      }
+  
+      const base64Data = reader.result.split(",")[1]; // Extract base64 content
+      // console.log("Base64 Data:", base64Data?.substring(0, 100));  // Print first 100 chars
+  
       setFilePreview(reader.result);
-      
-      formData.append("content", fileContent);
       setfileType(file.type);
+  
+      setImageData(encodeURIComponent(base64Data));  // Properly encode the base64 string  
 
     };
-    reader.readAsDataURL(file);
-  };
   
-  const storeImageToS3 = async () => {
+    reader.readAsDataURL(file); // Triggers onloadend
+
+    setUploadBtn(true);
+  };
+
+  
+  const storeImageToS3 = () => {
+
+    const formData = new FormData();
+
     const fileExtension = getfileType.split('/').pop().toLowerCase();
     const new_filename = topicId + "." + fileExtension;
+    formData.append("content", imageData);
     formData.append("file_name", new_filename);
 
-    alert("Image uploaded to S3 - " + new_filename)
-
+    formData.forEach((value, key) => {
+      console.log(`${key}:`, value);
+    });
+    
     // Call API to store image added into the comment
     fetch(
       "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/store-s3",
@@ -400,15 +422,6 @@ const fetchImageFromS3 = async (postID) => {
                 width="500px"
               />
             )}
-            <Box sx={{ mt: 3 }}>
-            {getTest ? (
-              <img src={getTest} alt="Fetched from S3" style={{ width: "300px" }} />
-            ) : (
-              <Button variant="outlined" onClick={fetchImageFromS3("21")}>
-                Fetch Image from S3
-              </Button>
-            )}
-          </Box>
             <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
               Upload Image/Video
               <input
@@ -430,7 +443,16 @@ const fetchImageFromS3 = async (postID) => {
             <Button variant="contained" type="submit">
               Create Post
             </Button>
-
+            {uploadBtn ? (
+                <Box sx={{ mt: 3 }}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => storeImageToS3()} // Pass formData directly to the function
+                    >
+                        Test store image
+                    </Button>
+                </Box>
+            ) : null}
             
           </Box>
         </>
