@@ -24,6 +24,7 @@ function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateTopic, setShowCreateTopic] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Function to fetch topics from API
   const fetchTopics = () => {
@@ -63,6 +64,12 @@ function HomePage() {
 
   useEffect(() => {
     fetchTopics();
+
+    // Check if user is admin
+    const token = sessionStorage.getItem("idToken");
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+    const isUserAdmin = tokenPayload["cognito:groups"]?.includes("forum-admin") || false;
+    setIsAdmin(isUserAdmin);
   }, []);
 
   const handleInputChange = (e) => {
@@ -77,22 +84,32 @@ function HomePage() {
       setErrorMessage("You must be logged in to create topics.");
       return;
     }
+
+    // Add id token to newTopic
+    const topicWithToken = { 
+      ...newTopic, 
+      idToken: token 
+    };
+
+    console.log(topicWithToken);
+    
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newTopic", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify(newTopic)
+      body: JSON.stringify(topicWithToken)
     })
       .then((response) => {
+        console.log(response);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
       })
       .then(() => {
-        setNewTopic({ name: "", description: "" });
+        setNewTopic({ name: "", description: "", idToken: "" });
         fetchTopics();
         setShowCreateTopic(false);
       })
@@ -157,6 +174,7 @@ function HomePage() {
       )}
 
       {/* Floating FAB for toggling create topic form */}
+      {isAdmin && (
       <Box sx={{ position: "fixed", bottom: 16, right: 16 }}>
         {showCreateTopic ? (
           <Button variant="contained" color="secondary" onClick={() => setShowCreateTopic(false)} startIcon={<CloseIcon />}>
@@ -168,6 +186,7 @@ function HomePage() {
           </Fab>
         )}
       </Box>
+      )}
 
       {/* Floating create topic form */}
       {showCreateTopic && (
