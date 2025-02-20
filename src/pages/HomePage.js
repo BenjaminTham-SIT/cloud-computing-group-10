@@ -24,6 +24,7 @@ function HomePage() {
   // Function to fetch topics from API
   const fetchTopics = () => {
     const token = sessionStorage.getItem("idToken");
+    console.log(token);
     if (!token) {
       setErrorMessage("You must be logged in to view topics.");
       return;
