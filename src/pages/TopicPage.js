@@ -229,7 +229,7 @@ const TopicPage = () => {
     const new_postID = topicId + "_" + postID;
     try {
       const response = await fetch(
-        "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
+        "https://n2lk3jz6ei.execute-api.ap-southeast-2.amazonaws.com/dev/retrieve-s3",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
