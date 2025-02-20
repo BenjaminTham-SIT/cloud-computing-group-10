@@ -27,6 +27,11 @@ const TopicPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imageURLs, setImageURLs] = useState([]); 
+  const [filePreview, setFilePreview] = useState(null);
+  const [getfileType, setfileType] = useState("");
+  const [getTest, setTest] = useState("");
 
   // Fetch posts for the given topic
   useEffect(() => {
@@ -57,6 +62,21 @@ const TopicPage = () => {
         const filtered = parsedData.data.filter(
           (post) => post.topic_id === parseInt(topicId, 10)
         );
+
+        filtered.forEach((post) => {
+          fetchImageFromS3(post.post_id)
+            .then((imageData) => {
+              if (imageData) {  // Only update if imageData is valid
+                setImageURLs((prevURLs) => ({
+                  ...prevURLs,
+                  [post.post_id]: `data:image/jpeg;base64,${imageData}`
+                }));
+              }
+            })
+            .catch((error) => {
+              console.error("Error fetching image for post", post.post_id, error);
+            });
+        });
         setPosts(filtered);
       })
       .catch((error) => console.error("Error fetching posts:", error))
@@ -124,6 +144,133 @@ const TopicPage = () => {
       .catch((error) => console.error("Error after creating post:", error));
   };
 
+    // Handling file upload
+    const formData = new FormData();
+    const handleFileChange = async (e) => {
+      const file = e.target.files[0];
+      setSelectedFile(file);
+  
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const fileContent = reader.result.split(",")[1];
+        setFilePreview(reader.result);
+        
+        formData.append("content", fileContent);
+        setfileType(file.type);
+  
+      };
+      reader.readAsDataURL(file);
+    };
+    
+    const storeImageToS3 = async () => {
+      const fileExtension = getfileType.split('/').pop().toLowerCase();
+      const new_filename = topicId + "." + fileExtension;
+      formData.append("file_name", new_filename);
+  
+      alert("Image uploaded to S3 - " + new_filename)
+  
+      // Call API to store image added into the comment
+      fetch(
+        "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/store-s3",
+        { method: "POST", body: formData }
+      )
+        .then((response) => response.json())
+        .then((data) => console.log("Success:", data))
+        .catch((error) => console.error("Error:", error));
+    }
+  
+    // const fetchImageFromS3 = async (postID) => {
+    //   const new_postID = topicId + "_" + postID;
+    //   try {
+    //     const response = await fetch(
+    //       "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
+    //       {
+    //         method: "POST",
+    //         headers: { "Content-Type": "application/json" },
+    //         body: JSON.stringify({ partial_name: new_postID })
+    //       }
+    //     );
+    //     if (!response.ok) {
+    //       throw new Error(`HTTP error! status: ${response.status}`);
+    //     }
+    //     const data = await response.json();
+    //     console.log("Parsed response:", data);
+    //     // Process the base64 image, for example:
+    //     const base64Image = data.file_content;
+    //     // Update your state here if needed
+    //     setTest(base64Image);
+    //     return base64Image;
+    //   } catch (error) {
+    //     console.error("Error fetching image:", error);
+    //     return null;
+    //   }
+    // };
+    
+  //   const fetchImageFromS3 = async (postID) => {
+  //   const new_postID = topicId + "_" + postID;
+  //   console.log("show me the id "+JSON.stringify(new_postID))
+  //   try {
+  //     const response = await fetch(
+  //       "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ "partial_name": new_postID })
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+  //     const data = await response.json();
+  //     // Parse the nested JSON string in the body
+  //     const parsedData = data.body ? JSON.parse(data.body) : data;
+  //     const base64Image = parsedData.file_content;
+  //     return base64Image;
+  //   } catch (error) {
+  //     console.error("Error fetching image:", error);
+  //     return null;
+  //   }
+  // };
+  
+  const fetchImageFromS3 = async (postID) => {
+    const new_postID = topicId + "_" + postID;
+    console.log("show me the id " + JSON.stringify(new_postID));
+    try {
+      const response = await fetch(
+        "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "partial_name": new_postID })
+        }
+      );
+      
+      // If the response status indicates that no image was found, return null.
+      if (response.status === 404) {
+        return null;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const parsedData = data.body ? JSON.parse(data.body) : data;
+      const base64Image = parsedData.file_content;
+      
+      // Check if the returned file content is valid.
+      if (!base64Image) {
+        return null;
+      }
+      
+      return base64Image;
+    } catch (error) {
+      console.error("Error fetching image:", error);
+      return null;
+    }
+  };
+  
+
   // Filter posts based on search term (by post name, case-insensitive)
   const filteredPosts = posts.filter((post) =>
     post.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -154,6 +301,8 @@ const TopicPage = () => {
 
           <List sx={{ mb: 4 }}>
             {filteredPosts.map((post) => {
+
+              
               const formattedDate = post.created_at
                 ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
                 : "Unknown Date";
@@ -162,6 +311,16 @@ const TopicPage = () => {
                   <Typography variant="subtitle2" color="text.secondary">
                     {post.username} • {formattedDate}
                   </Typography>
+
+                  <Box sx={{ mt: 3 }}>
+        {imageURLs[post.post_id] && (
+          <img
+            src={imageURLs[post.post_id]}
+            alt={`Image for post ${post.post_id}`}
+            style={{ width: "300px" }}
+          />
+        )}
+      </Box>
                   <ListItem
                     button
                     component={Link}
@@ -173,6 +332,9 @@ const TopicPage = () => {
                 </Paper>
               );
             })}
+
+
+
           </List>
 
           {/* Floating action button for new post */}
