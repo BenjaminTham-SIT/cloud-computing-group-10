@@ -72,6 +72,7 @@ function HomePage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const token = sessionStorage.getItem("idToken");
+    console.log("ID TOKEN " + idToken);
     if (!token) {
       setErrorMessage("You must be logged in to create topics.");
       return;
