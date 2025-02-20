@@ -14,8 +14,8 @@ import {
   CircularProgress,
   Fab
 } from "@mui/material";
-import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 
 function HomePage() {
   const [topics, setTopics] = useState([]);
@@ -25,7 +25,6 @@ function HomePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateTopic, setShowCreateTopic] = useState(false);
 
-  // Function to fetch topics from API
   const fetchTopics = () => {
     const token = sessionStorage.getItem("idToken");
     if (!token) {
@@ -101,13 +100,16 @@ function HomePage() {
       });
   };
 
+  // Filter topics by search term (case-insensitive)
   const filteredTopics = topics.filter((topic) =>
     topic.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, position: "relative" }}>
-      <Typography variant="h3" gutterBottom>Forum Topics</Typography>
+    <Container maxWidth="md" sx={{ mt: 4, position: "relative", p: 3, bgcolor: "#121212", color: "#e0e0e0", borderRadius: 2 }}>
+      <Typography variant="h3" gutterBottom sx={{ fontFamily: "Roboto Condensed, sans-serif" }}>
+        Forum Topics
+      </Typography>
 
       {/* Search bar */}
       <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
@@ -117,6 +119,11 @@ function HomePage() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           fullWidth
+          sx={{
+            bgcolor: "#1e1e1e",
+            input: { color: "#e0e0e0" },
+            fieldset: { borderColor: "#00ff99" }
+          }}
         />
       </Box>
 
@@ -128,21 +135,21 @@ function HomePage() {
 
       {isLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-          <CircularProgress />
+          <CircularProgress color="secondary" />
         </Box>
       ) : (
         <>
           {filteredTopics.length > 0 ? (
             <List>
               {filteredTopics.map((topic) => (
-                <Paper key={topic.topic_id} sx={{ mb: 2, p: 1 }}>
+                <Paper key={topic.topic_id} sx={{ mb: 2, p: 2, bgcolor: "#1e1e1e", border: "1px solid #00ff99" }}>
                   <ListItem
                     button
                     component={Link}
                     to={`/topic/${topic.topic_id}`}
                     state={{ topicName: topic.name }}
                   >
-                    <ListItemText primary={topic.name} secondary={topic.description} />
+                    <ListItemText primary={topic.name} secondary={topic.description} sx={{ color: "#e0e0e0" }}/>
                   </ListItem>
                 </Paper>
               ))}
@@ -177,17 +184,40 @@ function HomePage() {
             right: 16,
             width: "300px",
             p: 2,
-            bgcolor: "background.paper",
-            boxShadow: 3,
+            bgcolor: "rgba(30,30,30,0.95)",
+            boxShadow: 10,
             borderRadius: 2,
-            zIndex: 1000
+            zIndex: 1000,
+            border: "2px solid #00ff99"
           }}
         >
-          <Typography variant="h6" gutterBottom>Create Topic</Typography>
+          <Typography variant="h6" gutterBottom sx={{ color: "#00ff99" }}>Create Topic</Typography>
           <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField label="Topic Name" name="name" value={newTopic.name} onChange={handleInputChange} required />
-            <TextField label="Description" name="description" value={newTopic.description} onChange={handleInputChange} required />
-            <Button variant="contained" type="submit">Submit</Button>
+            <TextField
+              label="Topic Name"
+              name="name"
+              value={newTopic.name}
+              onChange={handleInputChange}
+              required
+              sx={{
+                input: { color: "#e0e0e0" },
+                fieldset: { borderColor: "#00ff99" }
+              }}
+            />
+            <TextField
+              label="Description"
+              name="description"
+              value={newTopic.description}
+              onChange={handleInputChange}
+              required
+              sx={{
+                input: { color: "#e0e0e0" },
+                fieldset: { borderColor: "#00ff99" }
+              }}
+            />
+            <Button variant="contained" type="submit" sx={{ bgcolor: "#00ff99", color: "#121212" }}>
+              Create Topic
+            </Button>
           </Box>
         </Box>
       )}
