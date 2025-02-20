@@ -90,8 +90,6 @@ function HomePage() {
       ...newTopic, 
       idToken: token 
     };
-
-    console.log(topicWithToken);
     
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newTopic", {
       method: "POST",
@@ -102,7 +100,6 @@ function HomePage() {
       body: JSON.stringify(topicWithToken)
     })
       .then((response) => {
-        console.log(response);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
