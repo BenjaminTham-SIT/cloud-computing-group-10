@@ -14,8 +14,8 @@ import {
   ListItem,
   ListItemText
 } from "@mui/material";
-import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 
 const TopicPage = () => {
   const { topicId } = useParams();
@@ -26,6 +26,7 @@ const TopicPage = () => {
   const [newPost, setNewPost] = useState({ name: "", content: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch posts for the given topic
   useEffect(() => {
@@ -73,7 +74,7 @@ const TopicPage = () => {
       console.error("No token found; user not logged in");
       return;
     }
-    // decode token to get user id
+    // Decode token to get user id
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const userID = tokenPayload.sub;
 
@@ -123,6 +124,11 @@ const TopicPage = () => {
       .catch((error) => console.error("Error after creating post:", error));
   };
 
+  // Filter posts based on search term (by post name, case-insensitive)
+  const filteredPosts = posts.filter((post) =>
+    post.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Container maxWidth="md" sx={{ mt: 4, position: "relative" }}>
       {isLoading ? (
@@ -135,8 +141,19 @@ const TopicPage = () => {
             Posts for {topicName}
           </Typography>
 
+          {/* Search bar for posts */}
+          <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
+            <TextField
+              label="Search posts by title"
+              variant="outlined"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              fullWidth
+            />
+          </Box>
+
           <List sx={{ mb: 4 }}>
-            {posts.map((post) => {
+            {filteredPosts.map((post) => {
               const formattedDate = post.created_at
                 ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
                 : "Unknown Date";
@@ -186,10 +203,26 @@ const TopicPage = () => {
                 zIndex: 1000
               }}
             >
-              <Typography variant="h6" gutterBottom>Create Post</Typography>
+              <Typography variant="h6" gutterBottom>
+                Create Post
+              </Typography>
               <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <TextField label="Post Title" name="name" value={newPost.name} onChange={handleInputChange} required />
-                <TextField label="Content" name="content" value={newPost.content} onChange={handleInputChange} multiline minRows={3} required />
+                <TextField
+                  label="Post Title"
+                  name="name"
+                  value={newPost.name}
+                  onChange={handleInputChange}
+                  required
+                />
+                <TextField
+                  label="Content"
+                  name="content"
+                  value={newPost.content}
+                  onChange={handleInputChange}
+                  multiline
+                  minRows={3}
+                  required
+                />
                 <Button variant="contained" type="submit">
                   Submit
                 </Button>
