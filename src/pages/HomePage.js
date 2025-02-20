@@ -11,8 +11,11 @@ import {
   Paper,
   Box,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Fab
 } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 
 function HomePage() {
   const [topics, setTopics] = useState([]);
@@ -20,19 +23,15 @@ function HomePage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [showCreateTopic, setShowCreateTopic] = useState(false);
 
   // Function to fetch topics from API
   const fetchTopics = () => {
     const token = sessionStorage.getItem("idToken");
-
     if (!token) {
       setErrorMessage("You must be logged in to view topics.");
       return;
     }
-    
-    // console.log(tokenPayload["cognito:groups"]);
-
     setIsLoading(true);
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getTopics", {
       headers: { Authorization: `Bearer ${token}` }
@@ -62,17 +61,8 @@ function HomePage() {
       .finally(() => setIsLoading(false));
   };
 
-  // Initial fetch of topics
   useEffect(() => {
     fetchTopics();
-    const token = sessionStorage.getItem("idToken");
-    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-
-    const isUserAdmin = tokenPayload["cognito:groups"]?.includes("forum-admin") || false;
-
-    console.log("Is Admin:", isUserAdmin);
-    setIsAdmin(isUserAdmin);
-    // console.log(isAdmin);
   }, []);
 
   const handleInputChange = (e) => {
@@ -86,8 +76,6 @@ function HomePage() {
       setErrorMessage("You must be logged in to create topics.");
       return;
     }
-
-    // Post new topic and then re-fetch the list so that the UI updates immediately.
     fetch("https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/newTopic", {
       method: "POST",
       headers: {
@@ -104,8 +92,8 @@ function HomePage() {
       })
       .then(() => {
         setNewTopic({ name: "", description: "" });
-        // Re-fetch topics after new topic creation.
         fetchTopics();
+        setShowCreateTopic(false);
       })
       .catch((error) => {
         console.error("Error creating topic:", error);
@@ -113,13 +101,12 @@ function HomePage() {
       });
   };
 
-  // Filter topics by search term (case-insensitive)
   const filteredTopics = topics.filter((topic) =>
     topic.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
+    <Container maxWidth="md" sx={{ mt: 4, position: "relative" }}>
       <Typography variant="h3" gutterBottom>Forum Topics</Typography>
 
       {/* Search bar */}
@@ -148,7 +135,7 @@ function HomePage() {
           {filteredTopics.length > 0 ? (
             <List>
               {filteredTopics.map((topic) => (
-                <Paper key={topic.topic_id} sx={{ mb: 2 }}>
+                <Paper key={topic.topic_id} sx={{ mb: 2, p: 1 }}>
                   <ListItem
                     button
                     component={Link}
@@ -165,39 +152,44 @@ function HomePage() {
               No topics found.
             </Typography>
           )}
-
-{isAdmin && (
-  <>
-    <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
-      Create a New Topic
-    </Typography>
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{ display: "flex", gap: 2, flexDirection: "column", maxWidth: "400px" }}
-    >
-      <TextField
-        label="Topic Name"
-        name="name"
-        value={newTopic.name}
-        onChange={handleInputChange}
-        required
-      />
-      <TextField
-        label="Description"
-        name="description"
-        value={newTopic.description}
-        onChange={handleInputChange}
-        required
-      />
-      <Button variant="contained" type="submit">
-        Create Topic
-      </Button>
-    </Box>
-  </>
-)}
-
         </>
+      )}
+
+      {/* Floating FAB for toggling create topic form */}
+      <Box sx={{ position: "fixed", bottom: 16, right: 16 }}>
+        {showCreateTopic ? (
+          <Button variant="contained" color="secondary" onClick={() => setShowCreateTopic(false)} startIcon={<CloseIcon />}>
+            Close
+          </Button>
+        ) : (
+          <Fab color="primary" onClick={() => setShowCreateTopic(true)}>
+            <AddIcon />
+          </Fab>
+        )}
+      </Box>
+
+      {/* Floating create topic form */}
+      {showCreateTopic && (
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: 80,
+            right: 16,
+            width: "300px",
+            p: 2,
+            bgcolor: "background.paper",
+            boxShadow: 3,
+            borderRadius: 2,
+            zIndex: 1000
+          }}
+        >
+          <Typography variant="h6" gutterBottom>Create Topic</Typography>
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField label="Topic Name" name="name" value={newTopic.name} onChange={handleInputChange} required />
+            <TextField label="Description" name="description" value={newTopic.description} onChange={handleInputChange} required />
+            <Button variant="contained" type="submit">Submit</Button>
+          </Box>
+        </Box>
       )}
     </Container>
   );
