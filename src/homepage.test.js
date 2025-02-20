@@ -2,6 +2,26 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import HomePage from "./pages/HomePage";
 
+beforeAll(() => {
+    const mockSessionStorage = (() => {
+      let store = {};
+      return {
+        getItem: (key) => store[key] || null,
+        setItem: (key, value) => (store[key] = value.toString()),
+        removeItem: (key) => delete store[key],
+        clear: () => (store = {}),
+      };
+    })();
+  
+    Object.defineProperty(window, "sessionStorage", {
+      value: mockSessionStorage,
+    });
+  });
+  
+  beforeEach(() => {
+    sessionStorage.setItem("idToken", "mocked-token");
+  });
+
 describe("HomePage Component", () => {
   test("renders Forum Topics heading", () => {
     render(<HomePage />);

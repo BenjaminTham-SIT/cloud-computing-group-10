@@ -3,6 +3,26 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PostPage from "./pages/PostPage";
 
+beforeAll(() => {
+    const mockSessionStorage = (() => {
+      let store = {};
+      return {
+        getItem: (key) => store[key] || null,
+        setItem: (key, value) => (store[key] = value.toString()),
+        removeItem: (key) => delete store[key],
+        clear: () => (store = {}),
+      };
+    })();
+  
+    Object.defineProperty(window, "sessionStorage", {
+      value: mockSessionStorage,
+    });
+  });
+  
+  beforeEach(() => {
+    sessionStorage.setItem("idToken", "mocked-token");
+  });
+
 describe("PostPage Component", () => {
   test("renders post title", () => {
     render(
