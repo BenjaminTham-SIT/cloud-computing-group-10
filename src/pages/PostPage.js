@@ -29,17 +29,52 @@ const PostPage = () => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
 
   // On mount, fetch comments for this post
+  // useEffect(() => {
+  //   setIsLoading(true);
+
+  //   const token = sessionStorage.getItem("idToken");
+  //   // If no token, you can decide to skip fetch or show a "please login" message
+  //   if (!token) {
+  //     console.error("No token in sessionStorage; user is not logged in?");
+  //     setIsLoading(false);
+  //     return;
+  //   }
+
+  //   const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+  //   const userID = tokenPayload.sub;
+  //   setLoggedInUserId(userID);
+
+  //   fetch(
+  //     `https://6kz844frt5.execute-api.us-east-1.amazonaws.com/dev/getComments?post_id=${postId}`,
+  //     { headers: { Authorization: `Bearer ${token}` } }
+  //   )
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       const parsedData = data.body ? JSON.parse(data.body) : data;
+  //       let allComments = [];
+  //       if (Array.isArray(parsedData.comments)) {
+  //         allComments = parsedData.comments;
+  //       } else if (Array.isArray(parsedData.data)) {
+  //         allComments = parsedData.data;
+  //       }
+  //       // Filter comments that match this post
+  //       const filtered = allComments.filter(
+  //         (comment) => comment.post_id === parseInt(postId, 10)
+  //       );
+  //       setComments(filtered);
+  //     })
+  //     .catch((error) => console.error("Error fetching comments:", error))
+  //     .finally(() => setIsLoading(false));
+  // }, [postId]);
+
   useEffect(() => {
     setIsLoading(true);
-
     const token = sessionStorage.getItem("idToken");
-    // If no token, you can decide to skip fetch or show a "please login" message
     if (!token) {
       console.error("No token in sessionStorage; user is not logged in?");
       setIsLoading(false);
       return;
     }
-
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const userID = tokenPayload.sub;
     setLoggedInUserId(userID);
@@ -57,7 +92,6 @@ const PostPage = () => {
         } else if (Array.isArray(parsedData.data)) {
           allComments = parsedData.data;
         }
-        // Filter comments that match this post
         const filtered = allComments.filter(
           (comment) => comment.post_id === parseInt(postId, 10)
         );
@@ -293,137 +327,253 @@ const PostPage = () => {
       .catch((error) => console.error("Error adding comment:", error));
   };
 
-  return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <>
-          <Typography variant="h4" gutterBottom>
-            {postTitle}
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 3 }}>
-            {postContent}
-          </Typography>
+//   return (
+//     <Container maxWidth="md" sx={{ mt: 4 }}>
+//       {isLoading ? (
+//         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+//           <CircularProgress />
+//         </Box>
+//       ) : (
+//         <>
+//           <Typography variant="h4" gutterBottom>
+//             {postTitle}
+//           </Typography>
+//           <Typography variant="body1" sx={{ mb: 3 }}>
+//             {postContent}
+//           </Typography>
 
-          <Typography variant="h5" gutterBottom>
-            Comments
-          </Typography>
-          <List sx={{ mb: 3 }}>
-            {comments.map((comment) => {
-              // Format the timestamp to a readable format (12-hour with AM/PM)
-              const formattedDate = comment.created_at
-                ? format(new Date(comment.created_at), "dd MMM yyyy, h:mm a") // 12-hour format
-                : "Unknown Date";
+//           <Typography variant="h5" gutterBottom>
+//             Comments
+//           </Typography>
+//           <List sx={{ mb: 3 }}>
+//             {comments.map((comment) => {
+//               // Format the timestamp to a readable format (12-hour with AM/PM)
+//               const formattedDate = comment.created_at
+//                 ? format(new Date(comment.created_at), "dd MMM yyyy, h:mm a") // 12-hour format
+//                 : "Unknown Date";
 
-              return (
-                <Paper key={comment.id} sx={{ mb: 2, p: 2 }}>
-                  {/* Display Username and Formatted Timestamp */}
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {comment.username} • {formattedDate}
-                  </Typography>
+//               return (
+//                 <Paper key={comment.id} sx={{ mb: 2, p: 2 }}>
+//                   {/* Display Username and Formatted Timestamp */}
+//                   <Typography variant="subtitle2" color="text.secondary">
+//                     {comment.username} • {formattedDate}
+//                   </Typography>
 
-                  {/* Comment Content */}
-                  <ListItem disablePadding>
-                    <ListItemText primary={comment.content} />
-                  </ListItem>
+//                   {/* Comment Content */}
+//                   <ListItem disablePadding>
+//                     <ListItemText primary={comment.content} />
+//                   </ListItem>
 
-                  {/* Show Edit and Delete buttons only if the comment belongs to the logged-in user */}
-                  {comment.user_id === loggedInUserId && (
-                    <Box sx={{ mt: 1 }}>
-                      {/* Edit Button */}
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleCommentEdit(comment.comment_id, comment.content)}
-                        sx={{ mr: 1 }}
-                      >
-                        Edit
-                      </Button>
-                      {/* Delete Button */}
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        onClick={() => handleCommentDelete(comment.comment_id)}
-                      >
-                        Delete
-                      </Button>
-                    </Box>
-                  )}
-                </Paper>
+//                   {/* Show Edit and Delete buttons only if the comment belongs to the logged-in user */}
+//                   {comment.user_id === loggedInUserId && (
+//                     <Box sx={{ mt: 1 }}>
+//                       {/* Edit Button */}
+//                       <Button
+//                         variant="outlined"
+//                         size="small"
+//                         onClick={() => handleCommentEdit(comment.comment_id, comment.content)}
+//                         sx={{ mr: 1 }}
+//                       >
+//                         Edit
+//                       </Button>
+//                       {/* Delete Button */}
+//                       <Button
+//                         variant="outlined"
+//                         color="error"
+//                         size="small"
+//                         onClick={() => handleCommentDelete(comment.comment_id)}
+//                       >
+//                         Delete
+//                       </Button>
+//                     </Box>
+//                   )}
+//                 </Paper>
 
-              );
-            })}
-          </List>
+//               );
+//             })}
+//           </List>
 
-          <Typography variant="h6" gutterBottom>
-            Add a Comment
-          </Typography>
-          <Box
-            component="form"
-            onSubmit={handleNewCommentSubmit}
-            sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-          >
-            {filePreview && (
-              <>
-                {selectedFile?.type.startsWith("image/") ? (
-                  <Box
-                    component="img"
-                    src={filePreview}
-                    alt="Selected Preview"
-                    width="300px"
-                  />
-                ) : selectedFile?.type.startsWith("video/") ? (
-                  <video width="300" controls>
-                    <source src={filePreview} type={selectedFile.type} />
-                    Your browser does not support the video tag.
-                  </video>
-                ) : (
-                  <Typography color="text.secondary">Unsupported file type</Typography>
+//           <Typography variant="h6" gutterBottom>
+//             Add a Comment
+//           </Typography>
+//           <Box
+//             component="form"
+//             onSubmit={handleNewCommentSubmit}
+//             sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+//           >
+//             {filePreview && (
+//               <>
+//                 {selectedFile?.type.startsWith("image/") ? (
+//                   <Box
+//                     component="img"
+//                     src={filePreview}
+//                     alt="Selected Preview"
+//                     width="300px"
+//                   />
+//                 ) : selectedFile?.type.startsWith("video/") ? (
+//                   <video width="300" controls>
+//                     <source src={filePreview} type={selectedFile.type} />
+//                     Your browser does not support the video tag.
+//                   </video>
+//                 ) : (
+//                   <Typography color="text.secondary">Unsupported file type</Typography>
+//                 )}
+//               </>
+//             )}
+
+//             <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
+//               Upload Image/Video
+//               <input
+//                 type="file"
+//                 accept="image/*, video/*"
+//                 hidden
+//                 onChange={handleFileChange}
+//               />
+//             </Button>
+
+//             <TextField
+//               label="Your comment"
+//               multiline
+//               minRows={3}
+//               value={newComment}
+//               onChange={(e) => setNewComment(e.target.value)}
+//               required
+//             />
+
+//             <Button variant="contained" type="submit">
+//               Post Comment
+//             </Button>
+//           </Box>
+
+//           {/* <Box sx={{ mt: 3 }}>
+//             {imageURL ? (
+//               <img src={imageURL} alt="Fetched from S3" style={{ width: "300px" }} />
+//             ) : (
+//               // <Button variant="outlined" onClick={fetchImageFromS3}>
+//               //   Fetch Image from S3
+//               // </Button>
+//             )}
+//           </Box> */}
+//         </>
+//       )}
+//     </Container>
+//   );
+// };
+
+// export default PostPage;
+
+
+
+return (
+  <Container maxWidth="md" sx={{ mt: "80px" }}>
+    {isLoading ? (
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+        <CircularProgress />
+      </Box>
+    ) : (
+      <>
+        <Typography variant="h4" gutterBottom>
+          {postTitle}
+        </Typography>
+        <Typography variant="body1" sx={{ mb: 3 }}>
+          {postContent}
+        </Typography>
+
+        <Typography variant="h5" gutterBottom>
+          Comments
+        </Typography>
+        <List sx={{ mb: 3 }}>
+          {comments.map((comment) => {
+            const formattedDate = comment.created_at
+              ? format(new Date(comment.created_at), "dd MMM yyyy, h:mm a")
+              : "Unknown Date";
+            return (
+              <Paper key={comment.id} sx={{ mb: 2, p: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {comment.username} • {formattedDate}
+                </Typography>
+                <ListItem disablePadding>
+                  <ListItemText primary={comment.content} />
+                </ListItem>
+                {comment.user_id === loggedInUserId && (
+                  <Box sx={{ mt: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleCommentEdit(comment.comment_id, comment.content)}
+                      sx={{ mr: 1 }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleCommentDelete(comment.comment_id)}
+                    >
+                      Delete
+                    </Button>
+                  </Box>
                 )}
-              </>
-            )}
+              </Paper>
+            );
+          })}
+        </List>
 
-            <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
-              Upload Image/Video
-              <input
-                type="file"
-                accept="image/*, video/*"
-                hidden
-                onChange={handleFileChange}
-              />
-            </Button>
-
-            <TextField
-              label="Your comment"
-              multiline
-              minRows={3}
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              required
+        <Typography variant="h6" gutterBottom>
+          Add a Comment
+        </Typography>
+        <Box
+          component="form"
+          onSubmit={handleNewCommentSubmit}
+          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+        >
+          {filePreview && (
+            <>
+              {selectedFile?.type.startsWith("image/") ? (
+                <Box
+                  component="img"
+                  src={filePreview}
+                  alt="Selected Preview"
+                  width="300px"
+                />
+              ) : selectedFile?.type.startsWith("video/") ? (
+                <video width="300" controls>
+                  <source src={filePreview} type={selectedFile.type} />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <Typography color="text.secondary">
+                  Unsupported file type
+                </Typography>
+              )}
+            </>
+          )}
+          {/* <Button variant="contained" component="label" sx={{ width: "fit-content" }}>
+            Upload Image/Video
+            <input
+              type="file"
+              accept="image/*, video/*"
+              hidden
+              onChange={handleFileChange}
             />
-
-            <Button variant="contained" type="submit">
-              Post Comment
-            </Button>
-          </Box>
-
-          <Box sx={{ mt: 3 }}>
-            {imageURL ? (
-              <img src={imageURL} alt="Fetched from S3" style={{ width: "300px" }} />
-            ) : (
-              <Button variant="outlined" onClick={fetchImageFromS3}>
-                Fetch Image from S3
-              </Button>
-            )}
-          </Box>
-        </>
-      )}
-    </Container>
-  );
+          </Button> */}
+          <TextField
+            label="Your comment"
+            multiline
+            minRows={3}
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            required
+          />
+          <Button variant="contained" type="submit">
+            Post Comment
+          </Button>
+        </Box>
+      </>
+    )}
+  </Container>
+);
 };
 
 export default PostPage;

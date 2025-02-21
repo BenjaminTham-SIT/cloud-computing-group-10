@@ -26,7 +26,7 @@ function NavBar() {
   };
 
   return (
-    <AppBar position="static">
+    <AppBar position="fixed" sx={{ zIndex: 1300 }}>
       <Toolbar>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           <Link to="/home" style={{ color: "inherit", textDecoration: "none" }}>
