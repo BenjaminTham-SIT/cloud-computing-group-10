@@ -13,7 +13,11 @@ export const handler = async (event) => {
   try {
     connection = await mysql.createConnection(dbConfig);
 
-    let query = 'SELECT * FROM comments';
+    let query = `
+      SELECT comments.*, users.username
+      FROM comments
+      JOIN users ON comments.user_id = users.user_id
+    `;
     let values = [];
 
     // Parse event body to get post_id
@@ -35,9 +39,16 @@ export const handler = async (event) => {
 
     const [rows] = await connection.execute(query, values);
 
+    if (rows.length === 0) {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: 'No data found' }),
+      };
+    }
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Query successful', data: rows }),
+      body: JSON.stringify({ message: 'Query successful', comments: rows }),
     };
   } catch (error) {
     console.error('Database query error:', error);
@@ -51,3 +62,4 @@ export const handler = async (event) => {
     }
   }
 };
+    

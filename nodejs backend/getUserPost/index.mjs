@@ -15,27 +15,18 @@ export const handler = async (event) => {
 
     // Fetch posts, and JOIN usernames from users table
     let query = `
-      SELECT posts.*, 
+      SELECT posts.*, users.username
       FROM posts
       JOIN users ON posts.user_id = users.user_id
+      WHERE users.username = ?
     `;
-    let values = [];
-
-    // Parse event body to get POST data
-    if (event.body) {
-      const body = JSON.parse(event.body);
-      
-      if (body.username) {
-        query += ' WHERE username = ?'; 
-        values.push(body.username);
-      }
-    }
+    let values = [event.username];
 
     const [rows] = await connection.execute(query, values);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Query successful', data: rows, event: event }),
+      body: JSON.stringify({ message: 'Query successful', data: rows, event: event, name: event.username }),
     };
   } catch (error) {
     console.error('Database query error:', error);
