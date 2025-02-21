@@ -8,6 +8,7 @@ import PostPage from "./pages/PostPage";    // existing post page
 import ConfirmPage from "./confirmUserPage"; // your confirmation page
 import UserProfilePage from "./UserProfilePage"; // new profile page
 import NavBar from "./components/NavBar";
+import UserPostsPage from "./pages/UserPostsPage";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/topic/:topicId" element={<TopicPage />} />
         <Route path="/post/:postId" element={<PostPage />} />
         <Route path="/profile" element={<UserProfilePage />} />
+        <Route path="/user/:username" element={<UserPostsPage />} />
       </Routes>
     </Router>
   );
