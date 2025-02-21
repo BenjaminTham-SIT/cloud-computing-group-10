@@ -30,7 +30,7 @@ function NavBar() {
       <Toolbar>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           <Link to="/home" style={{ color: "inherit", textDecoration: "none" }}>
-            Joo's Amazing Forum
+          Oh My Gaviscon!
           </Link>
         </Typography>
         {idToken ? (
