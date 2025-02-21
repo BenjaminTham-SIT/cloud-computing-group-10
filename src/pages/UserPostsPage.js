@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams,Link } from "react-router-dom";
 import { Container, Typography, CircularProgress, List, Paper, ListItem, ListItemText } from "@mui/material";
+import { format } from "date-fns"; // Import format from date-fns
 
 const UserPostsPage = () => {
   const { username } = useParams();
@@ -58,7 +59,13 @@ const UserPostsPage = () => {
     }, [username]);
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
+    <Container maxWidth="md"         sx={{
+        mt: "80px", // added top margin to clear the floating navbar
+        ml: "260px",
+        mr: "260px",
+        position: "relative"
+      }}
+>
       {isLoading ? (
         <CircularProgress sx={{ display: "block", margin: "auto" }} />
       ) : (
@@ -66,19 +73,50 @@ const UserPostsPage = () => {
           <Typography variant="h4" gutterBottom>
             Posts by {userData.username}
           </Typography>
-          <List>
-            {userData.posts.length > 0 ? (
-              userData.posts.map((post) => (
-                <Paper key={post.post_id} sx={{ mb: 2, p: 2 }}>
-                  <ListItem button>
-                    <ListItemText primary={post.name} secondary={post.content} />
-                  </ListItem>
-                </Paper>
-              ))
-            ) : (
-              <Typography>No posts available.</Typography>
-            )}
-          </List>
+
+<List sx={{ mb: 4 }}>
+  {userData.posts.length > 0 ? (
+    userData.posts.map((post) => {
+      // Format the date using date-fns
+      const formattedDate = post.created_at
+        ? format(new Date(post.created_at), "dd MMM yyyy, h:mm a")
+        : "Unknown Date";
+
+      return (
+        <Paper key={post.post_id} sx={{ mb: 2, p: 2 }}>
+          {/* Display username and date as a clickable link */}
+          <Typography
+            variant="subtitle2"
+            color="text.secondary"
+            component={Link}
+            to={`/user/${post.username}`} // Navigate to user's page
+            sx={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
+          >
+            {post.username} • {formattedDate}
+          </Typography>
+
+          {/* Navigate to post details */}
+          <ListItem
+            button
+            component={Link}
+            to={`/post/${post.post_id}`}
+            state={{
+              username: post.username,
+              date: formattedDate,
+              postTitle: post.name,
+              postContent: post.content
+            }}
+          >
+            <ListItemText primary={post.name} secondary={post.content} />
+          </ListItem>
+        </Paper>
+      );
+    })
+  ) : (
+    <Typography>No posts available.</Typography>
+  )}
+</List>
+
         </>
       )}
     </Container>

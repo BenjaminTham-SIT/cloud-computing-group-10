@@ -402,7 +402,13 @@ const TopicPage = () => {
                   : "Unknown Date";
                 return (
                   <Paper key={post.post_id} sx={{ mb: 2, p: 2 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
+                    <Typography
+                      variant="subtitle2"
+                      color="text.secondary"
+                      component={Link}  // Make it a clickable link
+                      to={`/user/${post.username}`}  // Navigate to user page
+                      sx={{ textDecoration: "none", color: "inherit", cursor: "pointer" }} // Style link
+                    >
                       {post.username} • {formattedDate}
                     </Typography>
                     <Box sx={{ mt: 3 }}>
@@ -422,7 +428,9 @@ const TopicPage = () => {
                       state={{
                         postTitle: post.name,
                         postContent: post.content,
-                        topicId: post.topic_id  // pass the topic id
+                        topicId: post.topic_id ,
+                        username: post.username,
+                        date: formattedDate// pass the topic id
                       }}
                     >
                       <ListItemText primary={post.name} secondary={post.content} />

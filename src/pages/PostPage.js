@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Link } from "react";
 import { format } from "date-fns"
 import { useParams, useLocation } from "react-router-dom";
 import {
@@ -19,6 +19,8 @@ const PostPage = () => {
   const location = useLocation();
   const postTitle = location.state?.postTitle || "Unknown Title";
   const postContent = location.state?.postContent || "No content available";
+  const username = location.state?.username || "Unknown";
+  const date = location.state?.date || "Unknown date";
 
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -493,6 +495,11 @@ return (
       </Box>
     ) : (
       <>
+      {/* Display username and formatted date */}
+      <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
+          Posted by {username} • {date}
+        </Typography>
+        
         <Typography variant="h4" gutterBottom>
           {postTitle}
         </Typography>
@@ -522,7 +529,14 @@ return (
               : "Unknown Date";
             return (
               <Paper key={comment.id} sx={{ mb: 2, p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
+          
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  component={Link}  // Make it a clickable link
+                  to={`/user/${comment.username}`}  // Navigate to user page
+                  sx={{ textDecoration: "none", color: "inherit", cursor: "pointer" }} // Style link
+                >
                   {comment.username} • {formattedDate}
                 </Typography>
                 <ListItem disablePadding>
