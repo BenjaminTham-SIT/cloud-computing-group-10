@@ -1,66 +1,50 @@
 import mysql from 'mysql2/promise';
 
 export const handler = async (event) => {
+    console.log('Event Body:', event.body);
+
   const dbConfig = {
-    host: 'forum-database.ci6qmqse2nc9.us-east-1.rds.amazonaws.com', // Replace with your RDS endpoint
+    host: 'forum-database.ci6qmqse2nc9.us-east-1.rds.amazonaws.com', 
     user: 'admin',
     password: 'testtest',
     database: 'forum-database',
   };
-
-  let connection;
-
-  try {
-    connection = await mysql.createConnection(dbConfig);
-
-    const requestBody = event;
-
-    // Extract required fields
-    const { comment_id, user_id, content } = requestBody;
-
-    if (!comment_id || !user_id || !content) {
+  
+    let connection;
+  
+    try {
+      connection = await mysql.createConnection(dbConfig);
+  
+      // Use event directly as the request body
+      const { user_id, post_id, content } = event;
+  
+      // Validate required fields
+      if (!user_id || !post_id || !content) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: 'Missing required fields: user_id, post_id, content' }),
+        };
+      }
+  
+      // Insert query
+      const query = 'INSERT INTO comments (user_id, post_id, content, created_at) VALUES (?, ?, ?, NOW())';
+      const values = [user_id, post_id, content];
+      const [result] = await connection.execute(query, values);
+  
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields: comment_id, user_id, content' }),
+        statusCode: 201,
+        body: JSON.stringify({ message: 'Comment added successfully', commentId: result.insertId }),
       };
-    }
-
-    // Step 1: Check if the comment exists and belongs to the user
-    const [rows] = await connection.execute('SELECT user_id FROM comments WHERE comment_id = ?', [comment_id]);
-
-    if (rows.length === 0) {
+    } catch (error) {
+      console.error('Database insertion error:', error);
       return {
-        statusCode: 404,
-        body: JSON.stringify({ error: 'Comment not found' }),
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Failed to insert comment', details: error.message }),
       };
+    } finally {
+      if (connection) {
+        await connection.end();
+      }
     }
-
-    if (rows[0].user_id !== user_id) {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({ error: 'Unauthorized: You can only edit your own comments' }),
-      };
-    }
-
-    // Step 2: Perform the update
-    const [result] = await connection.execute(
-      'UPDATE comments SET content = ? WHERE comment_id = ?',
-      [content, comment_id]
-    );
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Comment updated successfully' }),
-    };
-  } catch (error) {
-    console.error('Database update error:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to update comment', details: error.message }),
-    };
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
-  }
-};
+  };
+  

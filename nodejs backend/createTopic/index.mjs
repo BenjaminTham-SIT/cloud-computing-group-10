@@ -18,19 +18,34 @@ export const handler = async (event) => {
     const requestBody = event;
 
     // Extract name and description from request
-    const { name, description } = requestBody;
+    const { name, description, idToken } = requestBody;
 
     // Validate input
-    if (!name || !description) {
+    if (!name || !description || !idToken) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields: name and description' }),
+        body: JSON.stringify({ error: 'Missing required fields: name , description and idToken' }),
       };
     }
 
     connection = await mysql.createConnection(dbConfig);
 
-    // Insert a new topic
+    // Step 1: check if user is admin 
+    const token = idToken;
+     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+     const isUserAdmin = tokenPayload["cognito:groups"]?.includes("forum-admin") || false;
+ 
+ 
+     // if not admin, return unauthorised
+     if (!isUserAdmin) {
+          return {
+         statusCode: 403,
+         body: JSON.stringify({ error: 'Unauthorized: Only Administrators can update topics' }),
+       };
+     }
+
+
+    // Else : Insert a new topic
     const insertQuery = `INSERT INTO topics (name, description) VALUES (?, ?)`;
     const values = [name, description];
 

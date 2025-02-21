@@ -13,48 +13,40 @@ export const handler = async (event) => {
   try {
     connection = await mysql.createConnection(dbConfig);
 
-    // Ensure the body is correctly parsed
-    let body;
-    if (event.body) {
-      try {
-        body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
-      } catch (error) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: 'Invalid JSON format' }),
-        };
-      }
-    } else {
+    const requestBody = event;
+
+    // Extract required fields
+    const { comment_id, user_id, content } = requestBody;
+
+    if (!comment_id || !user_id || !content) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Request body is missing' }),
+        body: JSON.stringify({ error: 'Missing required fields: comment_id, user_id, content' }),
       };
     }
 
-    // Extract and validate the required fields
-    const { comment_id, user_id, post_id, content } = body;
+    // Step 1: Check if the comment exists and belongs to the user
+    const [rows] = await connection.execute('SELECT user_id FROM comments WHERE comment_id = ?', [comment_id]);
 
-    if (!comment_id || !user_id || !post_id || !content) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields: comment_id, user_id, post_id, content' }),
-      };
-    }
-
-    // Define the UPDATE query
-    const query = 'UPDATE comments SET user_id = ?, post_id = ?, content = ? WHERE comment_id = ?';
-    const values = [user_id, post_id, content, comment_id];
-
-    // Execute the UPDATE query
-    const [result] = await connection.execute(query, values);
-
-    // Check if any rows were affected
-    if (result.affectedRows === 0) {
+    if (rows.length === 0) {
       return {
         statusCode: 404,
         body: JSON.stringify({ error: 'Comment not found' }),
       };
     }
+
+    if (rows[0].user_id !== user_id) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Unauthorized: You can only edit your own comments' }),
+      };
+    }
+
+    // Step 2: Perform the update
+    const [result] = await connection.execute(
+      'UPDATE comments SET content = ? WHERE comment_id = ?',
+      [content, comment_id]
+    );
 
     return {
       statusCode: 200,

@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 
 export const handler = async (event) => {
   const dbConfig = {
-    host: 'forum-database.ci6qmqse2nc9.us-east-1.rds.amazonaws.com', // Replace with your RDS endpoint
+    host: 'forum-database.ci6qmqse2nc9.us-east-1.rds.amazonaws.com',
     user: 'admin',
     password: 'testtest',
     database: 'forum-database',
@@ -13,7 +13,12 @@ export const handler = async (event) => {
   try {
     connection = await mysql.createConnection(dbConfig);
 
-    let query = 'SELECT * FROM posts';
+    // Fetch posts, and JOIN usernames from users table
+    let query = `
+      SELECT posts.*, users.username
+      FROM posts
+      JOIN users ON posts.user_id = users.user_id
+    `;
     let values = [];
 
     // Parse event body to get POST data
@@ -30,7 +35,7 @@ export const handler = async (event) => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Query successful', data: rows }),
+      body: JSON.stringify({ message: 'Query successful', data: rows, event: event }),
     };
   } catch (error) {
     console.error('Database query error:', error);
