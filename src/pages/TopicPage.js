@@ -418,7 +418,12 @@ const TopicPage = () => {
                       button
                       component={Link}
                       to={`/post/${post.post_id}`}
-                      state={{ postTitle: post.name, postContent: post.content }}
+                      // state={{ postTitle: post.name, postContent: post.content }}
+                      state={{
+                        postTitle: post.name,
+                        postContent: post.content,
+                        topicId: post.topic_id  // pass the topic id
+                      }}
                     >
                       <ListItemText primary={post.name} secondary={post.content} />
                     </ListItem>

@@ -23,6 +23,8 @@ const PostPage = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const { topicId } = location.state || {};
+
   const [imageURL, setImageURL] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -100,6 +102,21 @@ const PostPage = () => {
       .catch((error) => console.error("Error fetching comments:", error))
       .finally(() => setIsLoading(false));
   }, [postId]);
+
+
+  useEffect(() => {
+    if (postId && topicId) {
+      fetchImageFromS3(postId, topicId)
+        .then((fileContent) => {
+          if (fileContent) {
+            setImageURL(`data:image/jpeg;base64,${fileContent}`);
+          }
+        })
+        .catch((error) => {
+          console.error("Error retrieving image for post:", error);
+        });
+    }
+  }, [postId, topicId]);
 
   // Editing a comment
   const handleCommentEdit = (commentId, currentContent) => {
@@ -252,22 +269,26 @@ const PostPage = () => {
     reader.readAsDataURL(file);
   };
 
-  const fetchImageFromS3 = async () => {
+  const fetchImageFromS3 = async (postID, topicID) => {
+    // Construct the S3 file name as "topicId_postId"
+    const s3Name = `${topicID}_${postID}`;
     try {
       const response = await fetch(
-        "https://pwsgthrir2.execute-api.us-east-1.amazonaws.com/test-stage/retrieve-data-s3"
+        "https://h2ngxg46k3.execute-api.ap-southeast-2.amazonaws.com/test-stage/retrieve-s3",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ partial_name: s3Name })
+        }
       );
-      if (!response.ok) {
-        alert("Failed to fetch image from S3");
-        return;
-      }
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
-      const responseBody = JSON.parse(data.body);
-      const base64Image = responseBody.file_content;
-      const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-      setImageURL(imageUrl);
+      const parsedData = data.body ? JSON.parse(data.body) : data;
+      return parsedData.file_content || null;
     } catch (error) {
       console.error("Error fetching image:", error);
+      return null;
     }
   };
 
@@ -478,6 +499,18 @@ return (
         <Typography variant="body1" sx={{ mb: 3 }}>
           {postContent}
         </Typography>
+        {imageURL && (
+            <Box sx={{ mb: 3 }}>
+              {/* <img src={imageURL} alt="Post visual" style={{ width: "300px" }} /> */}
+              <img
+  src={imageURL}
+  alt="Post visual"
+  style={{ width: "1000px", maxWidth: "100%" }}
+/>
+
+
+            </Box>
+          )}
 
         <Typography variant="h5" gutterBottom>
           Comments
