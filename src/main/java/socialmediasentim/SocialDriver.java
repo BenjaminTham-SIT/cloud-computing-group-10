@@ -1,3 +1,4 @@
+
 package socialmediasentim;
 
 import java.io.IOException;
@@ -17,6 +18,8 @@ public class SocialDriver {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		Job job = Job.getInstance(conf, "Social Media Analysis");
+		Path outPath = new Path(otherArgs[1]);
+		outPath.getFileSystem(conf).delete(outPath, true);
 
 		job.setJarByClass(SocialDriver.class);
 		job.setMapperClass(SocialMapper.class);
@@ -24,10 +27,10 @@ public class SocialDriver {
 		job.setReducerClass(SocialReducer.class);
 
 		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(IntWritable.class);
+		job.setOutputValueClass(Text.class);
 
 		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+		FileOutputFormat.setOutputPath(job, outPath);
 
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 
