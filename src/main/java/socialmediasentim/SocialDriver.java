@@ -17,20 +17,20 @@ public class SocialDriver {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		Job job = Job.getInstance(conf, "Social Media Analysis");
-		
+
 		job.setJarByClass(SocialDriver.class);
 		job.setMapperClass(SocialMapper.class);
-//		job.setCombinerClass(StatisticsReducer.class);
+		// job.setCombinerClass(StatisticsReducer.class);
 		job.setReducerClass(SocialReducer.class);
-		
+
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
-		
+
 		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
-		
-		System.exit(job.waitForCompletion(true)?0:1);
-		
+
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
+
 	}
-	
+
 }
