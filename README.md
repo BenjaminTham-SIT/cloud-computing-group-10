@@ -5,25 +5,28 @@
 
 ## 1. Descriptive Analytics & Trend Tracking
 
-### (a) Sentiment Trends Over Time (ben checkpoint: trying this now)
+### (a) Sentiment Trends Over Time 
+```
+(ben checkpoint: trying this now)
+```
 
 #### MapReduce Phase (Data Cleaning & Preparation)
 - **Mapper**  
-  1. Parse each record (similar to your example code).  
-  2. Filter out malformed lines, duplicates, or lines with missing critical fields (e.g., invalid date or sentiment).  
-  3. Extract key fields: date (or date+hour) and sentiment.  
-  4. **Output Key**: A composite key representing a time bucket (e.g., `YYYY-MM-DD`).  
-  5. **Output Value**: The numeric sentiment value (e.g., a float or double in string form). You may need a custom Writable or store it as `Text`/`FloatWritable`.  
+  1. Parse each record (similar to your example code).  `done`
+  2. Filter out malformed lines, duplicates, or lines with missing critical fields (e.g., invalid date or sentiment).  `done`
+  3. Extract key fields: date (or date+hour) and sentiment.  `done`
+  4. **Output Key**: A composite key representing a time bucket (e.g., `YYYY-MM-DD`).  `done`
+  5. **Output Value**: The numeric sentiment value (e.g., a float or double in string form). You may need a custom Writable or store it as `Text`/`FloatWritable`.  `done`
 
 - **Reducer**  
-  1. Receives all sentiment values for a given date.  
-  2. Sums them up, counts how many records there are, and computes the average.  
-  3. **Output**: Key = date, Value = average sentiment for that date.  
+  1. Receives all sentiment values for a given date.  `done`
+  2. Sums them up, counts how many records there are, and computes the average.  `done`
+  3. **Output**: Key = date, Value = average sentiment for that date.  `done`
 
 - **Result**  
-  - You get (date, average_sentiment) pairs, stored in HDFS as the cleaned and aggregated dataset.
+  - You get (date, average_sentiment) pairs, stored in HDFS as the cleaned and aggregated dataset.`done`
 
-#### Spark Phase (Analysis & Visualization)
+#### Spark Phase (Analysis & Visualization) 
 1. **Load** the output from HDFS (the date → average_sentiment results).  
 2. Create a Spark DataFrame or RDD, then plot or further analyze the trend.  
 3. **(Optional)** If you want hour-by-hour analysis, store date+hour in MapReduce, then do groupBy on `(date, hour)` in Spark, and compute or refine the average.  
