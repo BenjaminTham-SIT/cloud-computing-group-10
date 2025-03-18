@@ -7,8 +7,7 @@
 
 ### (a) Sentiment Trends Over Time 
 ```
-(ben checkpoint: trying this now)
-```
+DONE
 
 #### MapReduce Phase (Data Cleaning & Preparation)
 - **Mapper**  
@@ -76,10 +75,14 @@
 #### Spark Phase
 1. **Load** (language, total_count) or (date, language, count).  
 2. Rank languages by usage volume, produce distribution plots, track changes over time, etc.
-
+```
 ---
 
 ## 2. Machine Learning & Predictive Modeling
+
+```
+(ben checkpoint: trying this now)
+```
 
 ### (a) Predicting Emotion from Text/Keywords
 
