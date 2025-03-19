@@ -37,11 +37,14 @@ public class EmotionAnalysisMapper extends Mapper<LongWritable, Text, Text, Text
 
         System.out.println("Extracted Valid Timestamp: " + isoDatetime);
 
+        // Extract only the date (yyyy-MM-dd)
+        String date = isoDatetime.split("T")[0];
+
         // Extract the second-last column (emotion)
         String mainEmotion = parts[parts.length - 2].trim();
         System.out.println("Extracted Emotion: " + mainEmotion);
 
-        // Write the (timestamp, emotion) pair to context
-        context.write(new Text(isoDatetime), new Text(mainEmotion));
+        // Write the (date, emotion) pair to context
+        context.write(new Text(date), new Text(mainEmotion));
     }
 }
