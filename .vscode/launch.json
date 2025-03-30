@@ -17,7 +17,7 @@
             "type": "java",
             "name": "SocialDriver",
             "request": "launch",
-            "mainClass": "socialmediasentim.SocialDriver",
+            "mainClass": "preprocessing.PreprocessingDriver",
             "projectName": "BenBigDataTesting",
             "args": [
                 "csv",
