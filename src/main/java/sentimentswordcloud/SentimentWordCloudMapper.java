@@ -69,6 +69,14 @@ public class SentimentWordCloudMapper extends Mapper<LongWritable, Text, Text, I
                 // Trim and lowercase the word
                 word = word.trim().toLowerCase();
 
+                // Remove punctuation (keep only letters)
+                word = word.replaceAll("[^a-z]", "");
+
+                // Check if any word becomes empty after punctuation removal
+                if (word.isEmpty()) {
+                    continue; // Skip this iteration if the word is empty after cleaning
+                }
+            
                 // Filter out stop words
                 if (!stopWords.contains(word)) {
 
