@@ -1,5 +1,10 @@
+from pyspark.sql import SparkSession
+
+# Create a SparkSession
+spark = SparkSession.builder.appName("WordCountSort").getOrCreate()
+
 # Read all output files from the MapReduce output directory
-lines = spark.read.text("s3://sg.edu.sit.inf2006.aaronlam/word_cloud_output").rdd.map(lambda line: line.value)
+lines = spark.read.text("s3://sg.edu.sit.inf2006.aaronlam/word_cloud_job_output").rdd.map(lambda line: line.value)
 
 # Split each line by tab (expecting 3 fields: word, sentiment, count)
 parts = lines.map(lambda line: line.split("\t"))
@@ -18,12 +23,19 @@ negativeCounts = wordCounts.filter(lambda record: record[1].strip().lower() == "
 sortedPos = positiveCounts.sortBy(lambda record: record[2], ascending=False).collect()
 sortedNeg = negativeCounts.sortBy(lambda record: record[2], ascending=False).collect()
 
-# Print the top 20 positive words
-print("Top Positive Words:")
-for i, (word, sentiment, count) in enumerate(sortedPos[:20], start=1):
-    print(f"{i}: {word} ({sentiment}): {count}")
+# Instead of printing, write the results to S3 using RDD's saveAsTextFile
+sc = spark.sparkContext  # Get the SparkContext
 
-# Print the top 20 negative words
-print("Top Negative Words:")
-for i, (word, sentiment, count) in enumerate(sortedNeg[:20], start=1):
-    print(f"{i}: {word} ({sentiment}): {count}")
+# Write top 20 positive words
+sc.parallelize(sortedPos[:20]) \
+  .coalesce(1) \
+  .saveAsTextFile("s3://sg.edu.sit.inf2006.aaronlam/word_cloud_top_positive")
+
+# Write top 20 negative words
+sc.parallelize(sortedNeg[:20]) \
+  .coalesce(1) \
+  .saveAsTextFile("s3://sg.edu.sit.inf2006.aaronlam/word_cloud_top_negative")
+
+
+# Stop the Spark session
+spark.stop()
