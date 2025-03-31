@@ -1,8 +1,9 @@
-package themelangsentim;
+package themelangfreq;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
@@ -36,6 +37,7 @@ public class ThemeReducer extends Reducer<Text, Text, Text, Text> {
             for (Map.Entry<String, Integer> entry : themeCounts.entrySet()) {
                 String outputKey = languageName + " - " + entry.getKey();  // e.g., "English - Technology"
                 context.write(new Text(outputKey), new Text(entry.getValue().toString()));
+                System.out.println(new Text(outputKey + " > " + entry.getValue().toString()));
             }
         }
     }

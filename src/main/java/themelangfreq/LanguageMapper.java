@@ -1,10 +1,6 @@
-package themelangsentim;
+package themelangfreq;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -16,9 +12,7 @@ public class LanguageMapper extends Mapper<LongWritable, Text, Text, Text> {
     @Override
     public void map(LongWritable key, Text value, Context context) 
             throws IOException, InterruptedException {
-    	
-    	System.out.println(value.toString());
-    	
+    	    	
         String line = value.toString().trim();
         
         // Skip empty lines or header
