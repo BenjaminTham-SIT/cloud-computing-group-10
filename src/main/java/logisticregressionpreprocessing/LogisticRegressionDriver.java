@@ -20,7 +20,7 @@ public class LogisticRegressionDriver {
         outPath.getFileSystem(conf).delete(outPath, true);
 
         job.setJarByClass(LogisticRegressionDriver.class);
-        job.setMapperClass(LogisticRegression.class);
+        job.setMapperClass(LogisticRegressionMapper.class);
         // job.setCombinerClass(StatisticsReducer.class);
         job.setReducerClass(LogisticRegressionReducer.class);
 

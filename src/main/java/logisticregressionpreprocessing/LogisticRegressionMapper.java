@@ -13,7 +13,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-public class LogisticRegression extends Mapper<LongWritable, Text, Text, Text> {
+public class LogisticRegressionMapper extends Mapper<LongWritable, Text, Text, Text> {
     @Override
     public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         DateTimeFormatter fmt = DateTimeFormatter.ISO_DATE_TIME;
