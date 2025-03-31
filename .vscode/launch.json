@@ -13,15 +13,18 @@
             "request": "launch",
             "mainClass": "${file}"
         },
-        {
+        {                         
             "type": "java",
             "name": "SocialDriver",
             "request": "launch",
-            "mainClass": "preprocessing.PreprocessingDriver",
+            // "mainClass": "linearregressionpreprocessing.LinearRegressionDriver",
+            "mainClass": "logisticregressionpreprocessing.LogisticRegressionDriver",
+
             "projectName": "BenBigDataTesting",
             "args": [
                 "csv",
-                "output"
+                // "output-sentiment"
+                "output-mainemotions"
             ]
         }
     ]
