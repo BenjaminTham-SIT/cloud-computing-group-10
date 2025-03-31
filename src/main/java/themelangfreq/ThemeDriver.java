@@ -18,7 +18,7 @@ public class ThemeDriver {
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
         if (otherArgs.length < 2) {
-            System.err.println("Usage: ThemeDriver <data> <ISO> <output>");
+            System.err.println("Usage: ThemeDriver <data> <output> <ISO>");
             System.exit(2);
         }
 
