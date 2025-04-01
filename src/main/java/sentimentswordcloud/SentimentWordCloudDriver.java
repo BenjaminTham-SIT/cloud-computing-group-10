@@ -57,12 +57,6 @@ public class SentimentWordCloudDriver {
         // Set ChainMapper as the job's mapper
         job.setMapperClass(ChainMapper.class);
 
-        // Set custom partitioner to send "positive" keys to reducer 0 and "negative" to reducer 1
-        job.setPartitionerClass(SentimentWordCloudPartitioner.class);
-
-        // Use 2 reducers for separate outputs (positive and negative)
-        job.setNumReduceTasks(2);
-
         // Set reducer class
         job.setReducerClass(SentimentWordCloudReducer.class);
 
