@@ -6,10 +6,8 @@ import java.net.URISyntaxException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.chain.ChainMapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
@@ -42,20 +40,8 @@ public class SentimentWordCloudDriver {
         // Put this file to distributed cache so we can use it in mapper (stopwords file)
         job.addCacheFile(new URI(otherArgs[2]));
 
-        // Chain the validation mapper --> word count mapper
-
-        // Validation Mapper
-        Configuration validationConf = new Configuration(false);
-        ChainMapper.addMapper(job, ValidationMapper.class, LongWritable.class,
-                Text.class, LongWritable.class, Text.class, validationConf);
-
-        // Word Count Mapper
-        Configuration wordCountConf = new Configuration(false);
-        ChainMapper.addMapper(job, SentimentWordCloudMapper.class, LongWritable.class, Text.class,
-                Text.class, IntWritable.class, wordCountConf);
-
-        // Set ChainMapper as the job's mapper
-        job.setMapperClass(ChainMapper.class);
+        // Set SentimentWordCloudMapper as the job's mapper
+        job.setMapperClass(SentimentWordCloudMapper.class);
 
         // Set reducer class
         job.setReducerClass(SentimentWordCloudReducer.class);
