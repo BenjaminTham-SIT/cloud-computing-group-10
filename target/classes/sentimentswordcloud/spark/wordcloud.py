@@ -4,7 +4,7 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.appName("WordCountSort").getOrCreate()
 
 # Read all output files from the MapReduce output directory
-lines = spark.read.text("s3://sg.edu.sit.inf2006.aaronlam/word_cloud_job_output").rdd.map(lambda line: line.value)
+lines = spark.read.text("s3://sg.edu.sit.inf2006.aaronlam/SentimentWordCloudFolder/mr_preprocessing/output/").rdd.map(lambda line: line.value)
 
 # Split each line by tab (expecting 3 fields: word, sentiment, count)
 parts = lines.map(lambda line: line.split("\t"))
@@ -29,12 +29,12 @@ sc = spark.sparkContext  # Get the SparkContext
 # Write top 20 positive words
 sc.parallelize(sortedPos[:20]) \
   .coalesce(1) \
-  .saveAsTextFile("s3://sg.edu.sit.inf2006.aaronlam/word_cloud_top_positive")
+  .saveAsTextFile("s3://sg.edu.sit.inf2006.aaronlam/SentimentWordCloudFolder/spark_analysis/output/top_20_positive_words")
 
 # Write top 20 negative words
 sc.parallelize(sortedNeg[:20]) \
   .coalesce(1) \
-  .saveAsTextFile("s3://sg.edu.sit.inf2006.aaronlam/word_cloud_top_negative")
+  .saveAsTextFile("s3://sg.edu.sit.inf2006.aaronlam/SentimentWordCloudFolder/spark_analysis/output/top_20_negative_words")
 
 
 # Stop the Spark session
