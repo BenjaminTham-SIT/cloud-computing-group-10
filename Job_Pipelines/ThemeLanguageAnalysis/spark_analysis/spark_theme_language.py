@@ -18,7 +18,7 @@ from pyspark.sql.functions import split, col, countDistinct, sum as _sum, desc, 
 spark = SparkSession.builder.appName("Theme-Frequency-By-Language").getOrCreate()
 
 # 1. Load and parse the data (replace with your actual file)
-df = spark.read.text("s3://sg.edu.sit.inf2006.aaronlam/ThemeLanguageAnalysisFolder/mr_preprocessing/output/part-r-00000")
+df = spark.read.text("s3://sg.edu.sit.inf2006.aaronlam/ThemeLanguageAnalysisFolder/mr_preprocessing/output/")
 
 # 2. Parse into columns (Language, Theme, Count)
 parsed_df = df.withColumn("temp", split(col("value"), " - ")) \
@@ -119,36 +119,76 @@ themes_with_min = least_theme_df.filter(col("num_languages") == min_language_cou
 
 """## Final Output Analysis"""
 
-analysis_output_file = "analysis_results.txt" ### UPDATE_FILE_PATH_HERE
+from pyspark.sql import Row
 
-with open(analysis_output_file, "w") as f:
-    f.write("Top 3 Languages Across All Themes:\n")
-    for lang in top_languages:
-        f.write(f"- {lang}\n")
+# Prepare the analysis output as a list of strings
+output_lines = []
 
-    f.write("\nTop 3 Themes:\n")
-    for theme in top_themes:
-        f.write(f"- {theme}\n")
+output_lines.append("Top 3 Languages Across All Themes:")
+for lang in top_languages:
+    output_lines.append(f"- {lang}")
 
-    f.write("\nTop 3 themes with the highest percentage of the Top 3 languages:\n")
-    for theme in top_3_themes:
-        f.write(f"\nTheme: {theme}\n")
-        theme_language_percentages = theme_language_percentage_df.filter(col("theme") == theme).orderBy(desc("percentage")).collect()
-        for row in theme_language_percentages:
-            f.write(f"  Language: {row.language}, Percentage: {row.percentage:.2f}%\n")
+output_lines.append("\nTop 3 Themes:")
+for theme in top_themes:
+    output_lines.append(f"- {theme}")
 
-    f.write("\nTheme(s) with the Most Number of Languages:\n")
-    for row in themes_with_max:
-        f.write(f"Theme: {row.theme}, with {row.num_languages} Languages!\n")
+output_lines.append("\nTop 3 themes with the highest percentage of the Top 3 languages:")
+for theme in top_3_themes:
+    output_lines.append(f"\nTheme: {theme}")
+    theme_language_percentages = theme_language_percentage_df.filter(col("theme") == theme).orderBy(desc("percentage")).collect()
+    for row in theme_language_percentages:
+        output_lines.append(f"  Language: {row.language}, Percentage: {row.percentage:.2f}%")
 
-    f.write("\nTheme(s) with the Least Number of Languages:\n")
-    for row in themes_with_min:
-        f.write(f"Theme: {row.theme}, with {row.num_languages} Languages.\n")
+output_lines.append("\nTheme(s) with the Most Number of Languages:")
+for row in themes_with_max:
+    output_lines.append(f"Theme: {row.theme}, with {row.num_languages} Languages!")
 
-print(f"Analysis results have been printed to '{analysis_output_file}'")
+output_lines.append("\nTheme(s) with the Least Number of Languages:")
+for row in themes_with_min:
+    output_lines.append(f"Theme: {row.theme}, with {row.num_languages} Languages.")
+
+# Convert the list of strings to a DataFrame
+text_df = spark.createDataFrame([Row(value=line) for line in output_lines])
+
+# Define your S3 output path
+s3_text_output_path = "s3://sg.edu.sit.inf2006.aaronlam/ThemeLanguageAnalysisFolder/spark_analysis/text_output/"
+
+# Write the text lines to S3 as a single file
+text_df.coalesce(1).write.mode("overwrite").text(s3_text_output_path)
+
+print(f"Analysis results written to '{s3_text_output_path}'")
+
+
+# analysis_output_file = "analysis_results.txt" ### UPDATE_FILE_PATH_HERE
+
+# with open(analysis_output_file, "w") as f:
+#     f.write("Top 3 Languages Across All Themes:\n")
+#     for lang in top_languages:
+#         f.write(f"- {lang}\n")
+
+#     f.write("\nTop 3 Themes:\n")
+#     for theme in top_themes:
+#         f.write(f"- {theme}\n")
+
+#     f.write("\nTop 3 themes with the highest percentage of the Top 3 languages:\n")
+#     for theme in top_3_themes:
+#         f.write(f"\nTheme: {theme}\n")
+#         theme_language_percentages = theme_language_percentage_df.filter(col("theme") == theme).orderBy(desc("percentage")).collect()
+#         for row in theme_language_percentages:
+#             f.write(f"  Language: {row.language}, Percentage: {row.percentage:.2f}%\n")
+
+#     f.write("\nTheme(s) with the Most Number of Languages:\n")
+#     for row in themes_with_max:
+#         f.write(f"Theme: {row.theme}, with {row.num_languages} Languages!\n")
+
+#     f.write("\nTheme(s) with the Least Number of Languages:\n")
+#     for row in themes_with_min:
+#         f.write(f"Theme: {row.theme}, with {row.num_languages} Languages.\n")
+
+# print(f"Analysis results have been printed to '{analysis_output_file}'")
 
 # # Output path in S3
-output_path = "s3://sg.edu.sit.inf2006.aaronlam/ThemeLanguageAnalysisFolder/spark_analysis/output/"
+output_path = "s3://sg.edu.sit.inf2006.aaronlam/ThemeLanguageAnalysisFolder/spark_analysis/csv_output/"
 
 # Save DataFrame as CSV
 # Write DataFrames into separate subdirectories
