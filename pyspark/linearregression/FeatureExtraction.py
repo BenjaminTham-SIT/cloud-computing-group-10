@@ -13,7 +13,7 @@ spark = SparkSession.builder.appName("Word2VecToLibSVM").getOrCreate()
 df_raw = spark.read \
     .option("sep", "\t") \
     .option("header", "false") \
-    .csv("../../output-sentiment/part-r-00000")   # Adjust your path here
+    .csv("s3://sg.edu.sit.bigdataprojectlinearregression.ben/output/")   # Adjust your path here
 
 # Rename columns for clarity:
 # _c0 => mapperKey (we might not need it)
@@ -83,6 +83,6 @@ def to_libsvm_format(sentiment, features):
 libsvm_rdd = df_with_vectors.rdd.map(lambda row: to_libsvm_format(row["sentiment"], row["features"]))
 
 # Save to text files (one line per record, in LibSVM format)
-libsvm_rdd.saveAsTextFile("output_libsvm")
+libsvm_rdd.saveAsTextFile("s3://sg.edu.sit.bigdataprojectlinearregression.ben/output_libsvm")
 
 spark.stop()

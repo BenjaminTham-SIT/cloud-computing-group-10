@@ -1,12 +1,13 @@
 from pyspark.sql import SparkSession
 from pyspark.ml.regression import LinearRegression
-import matplotlib.pyplot as plt
+import s3fs
+
 
 
 # Read the entire output_libsvm folder (which contains multiple part files)
 spark = SparkSession.builder.appName("SentimentPrediction").getOrCreate()
 
-training = spark.read.format("libsvm").load("./output_libsvm")
+training = spark.read.format("libsvm").load("s3://sg.edu.sit.bigdataprojectlinearregression.ben/output_libsvm")
 
 lr = LinearRegression(maxIter=10, regParam=0.01, elasticNetParam=0.8)
 
@@ -25,13 +26,18 @@ trainingSummary.residuals.show()
 print("RMSE: %f" % trainingSummary.rootMeanSquaredError)
 print("r2: %f" % trainingSummary.r2)
 
-
-predictions = lrModel.transform(training)  # produce a DF with a "prediction" column
-
-# Show some sample predictions (label vs. prediction)
-predictions.select("label", "prediction").show(20, truncate=False)
-
-
+    
+fs = s3fs.S3FileSystem()
+with fs.open("sg.edu.sit.bigdataprojectlinearregression.ben/results.txt", "a") as f:
+    f.write("Coefficients: %s" % str(lrModel.coefficients))
+    f.write("Intercept: %s" % str(lrModel.intercept))
+    f.write("numIterations: %d" % trainingSummary.totalIterations)
+    f.write("objectiveHistory: %s" % str(trainingSummary.objectiveHistory))
+    f.write("RMSE: %f" % trainingSummary.rootMeanSquaredError)
+    f.write("r2: %f" % trainingSummary.r2)
+    
+    
+    
 # Convert to Pandas
 pdf = predictions.select("label", "prediction").toPandas()
 
@@ -45,4 +51,7 @@ min_val = min(pdf["label"].min(), pdf["prediction"].min())
 max_val = max(pdf["label"].max(), pdf["prediction"].max())
 plt.plot([min_val, max_val], [min_val, max_val], color="red", linestyle="--")
 
-plt.show()
+
+with fs.open("s3://sg.edu.sit.bigdataprojectlinearregression.ben/predictions.csv", "w") as f:
+    pdf.to_csv(f, index=False)
+
