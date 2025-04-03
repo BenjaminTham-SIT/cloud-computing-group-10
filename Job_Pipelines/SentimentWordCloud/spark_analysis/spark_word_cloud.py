@@ -27,12 +27,12 @@ sortedNeg = negativeCounts.sortBy(lambda record: record[2], ascending=False).col
 sc = spark.sparkContext  # Get the SparkContext
 
 # Write top 20 positive words
-sc.parallelize(sortedPos[:20]) \
+sc.parallelize(sortedPos[:200]) \
   .coalesce(1) \
   .saveAsTextFile("s3://sg.edu.sit.inf2006.aaronlam/SentimentWordCloudFolder/spark_analysis/output/top_20_positive_words")
 
 # Write top 20 negative words
-sc.parallelize(sortedNeg[:20]) \
+sc.parallelize(sortedNeg[:200]) \
   .coalesce(1) \
   .saveAsTextFile("s3://sg.edu.sit.inf2006.aaronlam/SentimentWordCloudFolder/spark_analysis/output/top_20_negative_words")
 
