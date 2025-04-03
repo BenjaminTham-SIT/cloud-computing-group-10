@@ -72,6 +72,16 @@ public class SentimentWordCloudMapper extends Mapper<LongWritable, Text, Text, I
                 // Remove punctuation (keep only letters)
                 word = word.replaceAll("[^a-z]", "");
 
+                // Skip words that are too short (single letters) or unusually long
+                if (word.length() < 2 || word.length() > 15) {
+                    continue;
+                }
+
+                // Skip words that are made up of a single repeated character (e.g. "aaaaaaaaaaa")
+                if (word.matches("^(.)\\1+$")) {
+                    continue;
+                }
+
                 // Check if any word becomes empty after punctuation removal
                 if (word.isEmpty()) {
                     continue; // Skip this iteration if the word is empty after cleaning
